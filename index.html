@@ -217,8 +217,11 @@ a.btn{text-decoration:none;color:inherit}
 .modal-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
 .modal-head h2{margin:0;font-size:18px;flex:1}
 .modal-head .tag{width:10px;height:28px;border-radius:4px;background:var(--c)}
-.modal-body{padding:18px 20px;overflow:auto;display:grid;gap:16px}
-.modal-foot{display:flex;gap:8px;align-items:center;padding:14px 20px;border-top:1px solid var(--border);flex-wrap:wrap}
+.modal-panel{max-height:calc(100dvh - 40px);overflow:hidden}
+#form{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.modal-head,.modal-foot{flex:none}
+.modal-body{padding:18px 20px;overflow:auto;display:grid;gap:16px;flex:1 1 auto;min-height:0;overscroll-behavior:contain}
+.modal-foot{display:flex;gap:8px;align-items:center;padding:14px 20px;border-top:1px solid var(--border);flex-wrap:wrap;background:var(--surface);border-radius:0 0 20px 20px}
 .modal-foot .grow{flex:1}
 .field{display:grid;gap:6px}
 .field>label,.field .lbl{font-size:13.5px;font-weight:600;color:var(--text-2)}
@@ -315,7 +318,8 @@ button.status{cursor:pointer;font:inherit;font-size:12.5px}
   .summary{grid-template-columns:repeat(2,1fr)}
   .toast{bottom:96px}
   .modal{padding:0;align-items:flex-end}
-  .modal-panel{max-width:none;border-radius:20px 20px 0 0;max-height:94vh}
+  .modal-panel{max-width:none;border-radius:20px 20px 0 0;max-height:94vh;max-height:94dvh}
+  .modal-foot{border-radius:0}
   .modal-foot{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
 }
 @media (max-width:640px){
@@ -424,6 +428,7 @@ button.status{cursor:pointer;font:inherit;font-size:12.5px}
    সব ডেটা আগে ফোনেই সেভ হয়, তাই অ্যাপ সাথে সাথে খোলে ও ইন্টারনেট ছাড়াও চলে।
    ইন্টারনেট থাকলে পেছনে নিজে থেকে Google Sheet-এর সাথে সিংক হয়।
    ===================================================================== */
+const APP_VERSION = '1.2';
 
 const DEFAULT_LISTS = {
   qatarCategories: ['খাবার','বাসা ভাড়া','যাতায়াত','মোবাইল ও ইন্টারনেট','কেনাকাটা','স্বাস্থ্য','বিল','অন্যান্য'],
@@ -1455,7 +1460,8 @@ function renderConnCard(){
     <h3>সংযোগ ও ডেটা</h3>
     <p class="muted" style="margin:0">ডেমো মোডে চলছে — নমুনা ডেটা, শুধু এই ডিভাইসে থাকে, Google Sheet-এ যায় না।</p>
     <button class="btn primary" data-action="go-connect">আসল Google Sheet-এ কানেক্ট করুন</button>
-    ${install}` : `
+    ${install}
+    <div class="help">অ্যাপ ভার্সন: ${APP_VERSION}</div>` : `
     <h3>সংযোগ ও ডেটা</h3>
     <div class="kv"><span>অবস্থা</span><span>${esc(stateText)}</span><span>শেষ সিংক</span><span>${when}</span><span>অপেক্ষায়</span><span>${n}টি পরিবর্তন</span></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1467,7 +1473,8 @@ function renderConnCard(){
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-export-all="qatar">${icon('download')}কাতার খরচ CSV</button><button class="btn" data-export-all="bd">${icon('download')}দেশে পাঠানো CSV</button></div>
     <div class="help">মোট এন্ট্রি: কাতার ${S.qatar.length}টি · বাংলাদেশ ${S.bd.length}টি</div>
     ${n ? `<div class="warn">${n}টি পরিবর্তন এখনো Google Sheet-এ যায়নি। সংযোগ বিচ্ছিন্ন করলে এগুলো হারিয়ে যাবে।</div>` : ''}
-    <button class="btn danger" data-action="disconnect">সংযোগ বিচ্ছিন্ন করুন</button>`;
+    <button class="btn danger" data-action="disconnect">সংযোগ বিচ্ছিন্ন করুন</button>
+    <div class="help">অ্যাপ ভার্সন: ${APP_VERSION}</div>`;
 }
 
 function saveSettingsNow(){
@@ -1595,7 +1602,16 @@ document.addEventListener('visibilitychange', () => {
 setInterval(() => { if (!document.hidden && CONN && !isDemo()) sync(false); }, 5 * 60 * 1000);
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  // GitHub-এ নতুন ফাইল আপলোড হলে অ্যাপ নিজে থেকেই নতুন ভার্সনে রিফ্রেশ হবে (ফর্ম খোলা থাকলে নয়)
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return;
+    reloading = true;
+    if ($('#modal').hidden) location.reload();
+    else toast('অ্যাপের নতুন ভার্সন এসেছে — বন্ধ করে আবার খুললে দেখাবে');
+  });
+  navigator.serviceWorker.register('sw.js').then(reg => reg.update()).catch(() => {});
 }
 
 boot();
