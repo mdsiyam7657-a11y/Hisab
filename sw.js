@@ -1,9 +1,11 @@
 /* প্রবাসী হিসাব — Service Worker
-   অ্যাপের ফাইলগুলো ফোনে জমা রাখে, যাতে অ্যাপ সাথে সাথে খোলে আর ইন্টারনেট ছাড়াও চলে।
-   ফাইল আপডেট হলে পেছনে নতুন কপি নামিয়ে রাখে — পরেরবার খুললে নতুন ভার্সন দেখাবে। */
-const CACHE = 'hisab-v2';
+   অ্যাপের ফাইলগুলো ফোনে জমা রাখে, যাতে অ্যাপ ইন্টারনেট ছাড়াও চলে।
+   ইন্টারনেট থাকলে অ্যাপ খোলার সময় সবসময় GitHub থেকে নতুন ভার্সন নেয়;
+   নেট না থাকলে (বা ৪ সেকেন্ডে উত্তর না এলে) ফোনে রাখা কপি দেখায়। */
+const CACHE = 'hisab-v3';
 const APP_FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './icon-180.png'];
 const CDN_FILES = ['https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'];
+const CACHEABLE_HOSTS = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
@@ -22,8 +24,6 @@ self.addEventListener('activate', e => {
   })());
 });
 
-const CACHEABLE_HOSTS = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
-
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -31,20 +31,39 @@ self.addEventListener('fetch', e => {
   const sameOrigin = url.origin === self.location.origin;
   if (!sameOrigin && !CACHEABLE_HOSTS.includes(url.hostname)) return; // Google Sheet-এর API সরাসরি নেটে যাবে
 
-  // অ্যাপ খোলার সময় (navigation) সবসময় index.html দেখাই — #c=… লিংক থাকলেও
-  const key = sameOrigin && req.mode === 'navigate' ? './index.html' : req;
-
-  e.respondWith((async () => {
-    const cache = await caches.open(CACHE);
-    const cached = await cache.match(key, { ignoreSearch: sameOrigin });
-    // নিজের ফাইলগুলো সবসময় সার্ভারে নতুন ভার্সন আছে কিনা মিলিয়ে নেয়
-    const net = sameOrigin ? fetch(new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' })) : fetch(req);
-    const fresh = net.then(res => {
-      if (res && (res.ok || res.type === 'opaque')) cache.put(key, res.clone());
-      return res;
-    }).catch(() => null);
-    if (cached) { e.waitUntil(fresh); return cached; }
-    const res = await fresh;
-    return res || new Response('অফলাইন', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-  })());
+  if (sameOrigin && req.mode === 'navigate') e.respondWith(openApp());
+  else e.respondWith(cacheThenUpdate(e, req, sameOrigin));
 });
+
+/** অ্যাপ খোলা: আগে নেট থেকে নতুন index.html, না পেলে ফোনের কপি */
+async function openApp() {
+  const cache = await caches.open(CACHE);
+  try {
+    const res = await Promise.race([
+      fetch(new Request('./index.html', { cache: 'no-cache', credentials: 'same-origin' })),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+    ]);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    cache.put('./index.html', res.clone());
+    return res;
+  } catch (err) {
+    return (await cache.match('./index.html')) || offlinePage();
+  }
+}
+
+/** অন্য ফাইল (আইকন, ফন্ট, চার্ট): ফোনের কপি সাথে সাথে, পেছনে নতুন কপি নামিয়ে রাখা */
+async function cacheThenUpdate(e, req, sameOrigin) {
+  const cache = await caches.open(CACHE);
+  const cached = await cache.match(req, { ignoreSearch: sameOrigin });
+  const net = sameOrigin ? fetch(new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' })) : fetch(req);
+  const fresh = net.then(res => {
+    if (res && (res.ok || res.type === 'opaque')) cache.put(req, res.clone());
+    return res;
+  }).catch(() => null);
+  if (cached) { e.waitUntil(fresh); return cached; }
+  return (await fresh) || offlinePage();
+}
+
+function offlinePage() {
+  return new Response('অফলাইন', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+}
