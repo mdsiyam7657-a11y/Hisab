@@ -1,14 +1,14 @@
 /* প্রবাসী হিসাব — Service Worker
    অ্যাপের ফাইলগুলো ফোনে জমা রাখে, যাতে অ্যাপ সাথে সাথে খোলে আর ইন্টারনেট ছাড়াও চলে।
    ফাইল আপডেট হলে পেছনে নতুন কপি নামিয়ে রাখে — পরেরবার খুললে নতুন ভার্সন দেখাবে। */
-const CACHE = 'hisab-v1';
+const CACHE = 'hisab-v2';
 const APP_FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './icon-180.png'];
 const CDN_FILES = ['https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await cache.addAll(APP_FILES);
+    await cache.addAll(APP_FILES.map(u => new Request(u, { cache: 'reload' })));
     await Promise.all(CDN_FILES.map(u => cache.add(new Request(u, { mode: 'cors' })).catch(() => {})));
     await self.skipWaiting();
   })());
@@ -37,7 +37,9 @@ self.addEventListener('fetch', e => {
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const cached = await cache.match(key, { ignoreSearch: sameOrigin });
-    const fresh = fetch(req).then(res => {
+    // নিজের ফাইলগুলো সবসময় সার্ভারে নতুন ভার্সন আছে কিনা মিলিয়ে নেয়
+    const net = sameOrigin ? fetch(new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' })) : fetch(req);
+    const fresh = net.then(res => {
       if (res && (res.ok || res.type === 'opaque')) cache.put(key, res.clone());
       return res;
     }).catch(() => null);
