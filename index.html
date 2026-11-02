@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>প্রবাসী হিসাব</title>
+<meta name="description" content="কাতারের খরচ ও বাংলাদেশে পাঠানো টাকার হিসাব — Google Sheet-এ অটো সেভ">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#F3F5F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1120" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="হিসাব">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ---------- রং ও থিম ---------- */
+:root{
+  --bg:#F3F5F9; --surface:#FFFFFF; --surface-2:#F7F8FB; --border:#E3E7EE; --border-strong:#CDD4DF;
+  --text:#101828; --text-2:#344054; --muted:#667085;
+  --primary:#3446C4; --primary-soft:#EBEEFD; --on-primary:#FFFFFF;
+  --qa:#9B1B47; --qa-soft:#F8E9EE; --bd:#0E8A5F; --bd-soft:#E3F4EC;
+  --good:#067647; --good-soft:#E7F6EE; --bad:#B42318; --bad-soft:#FDECEA;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 6px 20px rgba(16,24,40,.05);
+  --shadow-lg:0 20px 50px rgba(16,24,40,.18);
+  --radius:16px; --radius-sm:10px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1120; --surface:#141C2E; --surface-2:#1A2338; --border:#26314A; --border-strong:#34415E;
+    --text:#E8ECF4; --text-2:#C3CBDA; --muted:#8E9AB2;
+    --primary:#8B9BFF; --primary-soft:#232C52; --on-primary:#0B1120;
+    --qa:#D9648B; --qa-soft:#3A1A27; --bd:#128052; --bd-soft:#0F2E22;
+    --good:#4ACB8B; --good-soft:#0F2E22; --bad:#F27A6E; --bad-soft:#3A1A1A;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+    --shadow-lg:0 20px 50px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1120; --surface:#141C2E; --surface-2:#1A2338; --border:#26314A; --border-strong:#34415E;
+  --text:#E8ECF4; --text-2:#C3CBDA; --muted:#8E9AB2;
+  --primary:#8B9BFF; --primary-soft:#232C52; --on-primary:#0B1120;
+  --qa:#D9648B; --qa-soft:#3A1A27; --bd:#128052; --bd-soft:#0F2E22;
+  --good:#4ACB8B; --good-soft:#0F2E22; --bad:#F27A6E; --bad-soft:#3A1A1A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  --shadow-lg:0 20px 50px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .tx-icon, :root:not([data-theme="light"]) .pick input:checked+label{color:color-mix(in srgb,var(--c) 55%,#fff)} }
+:root[data-theme="dark"] .tx-icon, :root[data-theme="dark"] .pick input:checked+label{color:color-mix(in srgb,var(--c) 55%,#fff)}
+
+/* ---------- বেস ---------- */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Hind Siliguri',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+[hidden]{display:none!important}
+
+/* ---------- লেআউট ---------- */
+.app{display:flex;min-height:100vh}
+.sidebar{width:248px;flex:none;background:var(--surface);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:20px 14px}
+.brand{display:flex;gap:12px;align-items:center;padding:2px 8px 22px}
+.brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--qa),var(--bd));display:grid;place-items:center;color:#fff;font-weight:700;font-size:18px}
+.brand b{display:block;font-size:17px;line-height:1.2}
+.brand small{color:var(--muted);font-size:12.5px}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav-btn{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:0;background:none;border-radius:var(--radius-sm);color:var(--muted);font-weight:500;text-align:left}
+.nav-btn:hover{background:var(--surface-2);color:var(--text)}
+.nav-btn.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.side-foot{margin-top:auto;padding:12px;border-radius:12px;background:var(--surface-2);font-size:13px;color:var(--muted)}
+.side-foot b{color:var(--text)}
+main{flex:1;min-width:0}
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;gap:12px;padding:14px 28px}
+.topbar h1{font-size:20px;margin:0;line-height:1.25}
+.topbar .sub{font-size:13px;color:var(--muted)}
+.topbar .grow{flex:1;min-width:0}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);background:var(--surface);border:1px solid var(--border);padding:4px 10px;border-radius:99px;white-space:nowrap}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.status.demo i{background:#E8A33D}
+.content{padding:6px 28px 48px;max-width:1240px;margin:0 auto}
+.view{display:none;animation:fade .2s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ---------- বাটন ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--border);background:var(--surface);padding:9px 14px;border-radius:var(--radius-sm);font-weight:600;font-size:14px;white-space:nowrap;transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--border-strong);background:var(--surface-2)}
+a.btn{text-decoration:none;color:inherit}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.qa{background:var(--qa);border-color:var(--qa);color:#fff}
+.btn.bd{background:var(--bd);border-color:var(--bd);color:#fff}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--border))}
+.btn.danger.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+.btn.ghost{background:none;border-color:transparent}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn:disabled{opacity:.6;cursor:wait}
+.icon-btn{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text-2)}
+.icon-btn:hover{background:var(--surface-2)}
+
+/* ---------- কার্ড ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px}
+.card h3{margin:0;font-size:15.5px;font-weight:600}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.card-head .hint{font-size:12.5px;color:var(--muted)}
+.grid{display:grid;gap:16px}
+.grid>*{min-width:0}
+.kpis{grid-template-columns:repeat(4,minmax(0,1fr));margin:14px 0 16px}
+.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.stack{display:grid;gap:16px}
+
+.kpi{position:relative;overflow:hidden;padding:16px 18px}
+.kpi-label{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--text-2);font-weight:500}
+.kpi-label .dot{width:9px;height:9px;border-radius:3px;background:var(--c,var(--primary))}
+.kpi-value{font-size:26px;font-weight:700;margin-top:6px;letter-spacing:-.01em;line-height:1.2}
+.kpi-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.kpi::after{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--c,transparent)}
+.delta{display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:12.5px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-2)}
+.delta.bad{background:var(--bad-soft);color:var(--bad)}
+.delta.good{background:var(--good-soft);color:var(--good)}
+.delta span{font-weight:400;color:var(--muted)}
+.split{display:flex;gap:2px;height:12px;border-radius:6px;overflow:hidden;margin:14px 0 10px;background:var(--surface-2)}
+.split span{display:block;height:100%;min-width:0}
+.split-legend{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--text-2)}
+.split-legend b{font-weight:700;color:var(--text)}
+.sw{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;vertical-align:1px}
+
+/* ---------- চিপস ও ফিল্টার ---------- */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--border);background:var(--surface);padding:6px 13px;border-radius:99px;font-size:13.5px;font-weight:500;color:var(--text-2);white-space:nowrap}
+.chip:hover{border-color:var(--border-strong)}
+.chip.active{background:var(--text);border-color:var(--text);color:var(--surface)}
+.period-wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.custom-range{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.custom-range input{padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);font-size:14px}
+.range-label{font-size:13px;color:var(--muted)}
+.filters{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding:14px 16px}
+.filters>*,.period-wrap,.toolbar>*{min-width:0}
+.chips.period{max-width:100%}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-row .select{flex:1 1 140px;min-width:0}
+.search{flex:1 1 220px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;background:var(--surface);color:var(--muted)}
+.search input{border:0;outline:0;background:none;padding:9px 0;width:100%;color:var(--text)}
+.select{border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 34px 9px 12px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;appearance:none;-webkit-appearance:none;font-size:14px;max-width:100%}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted)}
+.seg button.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(16,24,40,.12)}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:14px 0 14px;flex-wrap:wrap}
+.page-head h2{margin:0;font-size:22px}
+.page-head p{margin:2px 0 0;color:var(--muted);font-size:14px}
+
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0}
+.summary .card{padding:12px 16px;box-shadow:none}
+.summary .lbl{font-size:12.5px;color:var(--muted)}
+.summary .val{font-size:19px;font-weight:700;line-height:1.3}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:4px 0 12px;flex-wrap:wrap}
+
+/* ---------- লেনদেন তালিকা ---------- */
+.day-group{margin-bottom:14px}
+.day-head{display:flex;justify-content:space-between;align-items:baseline;padding:6px 6px 8px;font-size:13.5px;color:var(--muted);font-weight:500}
+.day-head b{color:var(--text-2);font-weight:600}
+.tx-list{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.tx{display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;border:0;border-top:1px solid var(--border);background:none;text-align:left}
+.tx:first-child{border-top:0}
+.tx:hover{background:var(--surface-2)}
+.tx-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:16px;flex:none;background:var(--soft);color:var(--c)}
+.tx-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.tx-title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-note{font-size:12.5px;color:var(--text-2);background:var(--surface-2);border-radius:6px;padding:2px 8px;margin-top:4px;align-self:flex-start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx-amt{text-align:right;font-weight:700;white-space:nowrap}
+.tx-amt small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.more{display:flex;justify-content:center;margin:10px 0}
+
+.sum-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.sum-table th,.sum-table td{padding:11px 14px;text-align:left;border-top:1px solid var(--border);font-size:14px}
+.sum-table th{border-top:0;background:var(--surface-2);font-size:12.5px;color:var(--muted);font-weight:600}
+.sum-table td.r,.sum-table th.r{text-align:right}
+.bar-cell{width:30%}
+.mini-bar{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.mini-bar span{display:block;height:100%;border-radius:4px;background:var(--c)}
+.chg{font-size:12.5px;font-weight:600;white-space:nowrap}
+.chg.bad{color:var(--bad)} .chg.good{color:var(--good)} .chg.neu{color:var(--muted)}
+
+/* ---------- ক্যাটাগরি ব্রেকডাউন ---------- */
+.rank{display:grid;gap:12px}
+.rank-row{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:baseline;font-size:14px}
+.rank-row .nm{color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-row .v{font-weight:600}
+.rank-row .v small{color:var(--muted);font-weight:500;margin-left:6px}
+.rank-row .mini-bar{grid-column:1/-1;height:8px}
+.chart-box{position:relative;height:280px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-2)}
+.empty{text-align:center;padding:36px 16px;color:var(--muted)}
+.empty b{display:block;color:var(--text);font-size:16px;margin-bottom:4px}
+.welcome{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:linear-gradient(120deg,var(--qa-soft),var(--bd-soft));border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-top:14px}
+.welcome h3{margin:0 0 4px;font-size:18px}
+.welcome p{margin:0;color:var(--text-2)}
+
+/* ---------- ফর্ম / মডাল ---------- */
+.modal{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop{position:absolute;inset:0;background:rgba(10,15,28,.5);animation:fade .15s}
+.modal-panel{position:relative;width:100%;max-width:560px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--surface);border-radius:20px;box-shadow:var(--shadow-lg);animation:pop .2s ease}
+@keyframes pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.modal-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-head h2{margin:0;font-size:18px;flex:1}
+.modal-head .tag{width:10px;height:28px;border-radius:4px;background:var(--c)}
+.modal-body{padding:18px 20px;overflow:auto;display:grid;gap:16px}
+.modal-foot{display:flex;gap:8px;align-items:center;padding:14px 20px;border-top:1px solid var(--border);flex-wrap:wrap}
+.modal-foot .grow{flex:1}
+.field{display:grid;gap:6px}
+.field>label,.field .lbl{font-size:13.5px;font-weight:600;color:var(--text-2)}
+.field .opt{font-weight:400;color:var(--muted)}
+.input,.textarea{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;background:var(--surface);font-size:16px;outline:none;transition:border-color .15s,box-shadow .15s}
+.input:focus,.textarea:focus,.custom-range input:focus,.select:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft);outline:none}
+.textarea{min-height:76px;resize:vertical}
+.amount-wrap{display:flex;align-items:center;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface)}
+.amount-wrap:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.amount-wrap .cur{white-space:nowrap;padding:0 14px;font-weight:700;color:var(--muted);align-self:stretch;display:grid;place-items:center;background:var(--surface-2);border-right:1px solid var(--border)}
+.amount-wrap input{border:0;outline:0;background:none;padding:12px;width:100%;font-size:22px;font-weight:700}
+.amount-wrap.small input{font-size:17px;padding:10px 12px}
+.help{font-size:12.5px;color:var(--muted)}
+.err{font-size:12.5px;color:var(--bad)}
+.pick{display:flex;gap:6px;flex-wrap:wrap}
+.pick input{position:absolute;opacity:0;pointer-events:none}
+.pick label{border:1px solid var(--border);background:var(--surface);padding:6px 12px;border-radius:99px;font-size:14px;font-weight:500;color:var(--text-2);cursor:pointer;user-select:none}
+.pick input:checked+label{background:var(--soft);border-color:var(--c);color:var(--c);font-weight:600}
+.pick input:focus-visible+label{box-shadow:0 0 0 3px var(--primary-soft)}
+.pick .add-chip{border-style:dashed;color:var(--muted);background:none}
+.add-inline{display:flex;gap:6px}
+.add-inline .input{padding:7px 10px;font-size:14px}
+
+/* ---------- সেটিংস ---------- */
+.set-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.list-editor{display:grid;gap:10px}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag-item{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);background:var(--surface-2);border-radius:99px;padding:4px 6px 4px 12px;font-size:14px}
+.tag-item button{border:0;background:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.tag-item button:hover{background:var(--bad-soft);color:var(--bad)}
+.tag-item button svg{width:14px;height:14px}
+.save-bar{position:sticky;bottom:16px;display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+
+/* ---------- মোবাইল নেভিগেশন ---------- */
+.bottom-nav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);border-top:1px solid var(--border);padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;align-items:center}
+.bottom-nav .nav-btn{flex-direction:column;gap:2px;font-size:11.5px;padding:6px 4px;width:auto;flex:1;text-align:center;align-items:center}
+.bottom-nav .nav-btn.active{background:none}
+.fab{width:54px;height:54px;border-radius:18px;border:0;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;box-shadow:0 8px 20px color-mix(in srgb,var(--primary) 40%,transparent);margin-top:-22px;flex:none}
+.fab svg{width:26px;height:26px}
+.chooser{display:grid;gap:10px}
+.choose{display:flex;gap:14px;align-items:center;padding:16px;border-radius:14px;border:1px solid var(--border);background:var(--soft);text-align:left;width:100%}
+.choose .ci{width:44px;height:44px;border-radius:12px;background:var(--c);color:#fff;display:grid;place-items:center;flex:none}
+.choose b{display:block;font-size:16px}
+.choose span{font-size:13px;color:var(--muted)}
+
+/* ---------- টোস্ট ও লোডিং ---------- */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:200;background:var(--text);color:var(--surface);padding:11px 18px;border-radius:12px;font-weight:500;box-shadow:var(--shadow-lg);max-width:calc(100vw - 32px);animation:pop .2s}
+.toast.error{background:var(--bad);color:#fff}
+.loading{position:fixed;inset:0;z-index:300;background:var(--bg);display:grid;place-items:center;text-align:center;color:var(--muted)}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- অ্যাপ: সংযোগ স্ক্রিন, সিংক, ইনস্টল ---------- */
+.connect{position:fixed;inset:0;z-index:250;background:var(--bg);overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:max(32px,env(safe-area-inset-top)) 16px 32px}
+.connect-card{width:100%;max-width:460px;display:grid;gap:16px;margin:auto 0}
+.connect-head{text-align:center;display:grid;justify-items:center;gap:6px;margin-bottom:6px}
+.connect-head .brand-mark{width:64px;height:64px;border-radius:18px;font-size:30px}
+.connect-head h1{margin:6px 0 0;font-size:24px}
+.connect-head p{margin:0;color:var(--muted)}
+.paste-row{display:flex;gap:6px}
+.paste-row .input{flex:1;min-width:0;font-size:14px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--border)}
+button.status{cursor:pointer;font:inherit;font-size:12.5px}
+.status.syncing i{background:var(--primary);animation:pulse 1s ease-in-out infinite}
+.status.pending i{background:#E8A33D}
+.status.offline i{background:var(--muted)}
+.status.error i,.status.auth i{background:var(--bad)}
+@keyframes pulse{50%{opacity:.3}}
+.pend{color:#B7791F!important}
+.banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--primary-soft);border:1px solid color-mix(in srgb,var(--primary) 25%,var(--border));border-radius:var(--radius);padding:12px 16px;margin-top:14px}
+.banner p{margin:0;flex:1;min-width:180px;font-size:14px;color:var(--text-2)}
+.banner b{color:var(--text)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv span:nth-child(odd){color:var(--muted)}
+.qr-box{display:grid;justify-items:center;gap:12px;text-align:center}
+.qr-box .qr{background:#fff;padding:14px;border-radius:14px;line-height:0}
+.qr-box .qr img,.qr-box .qr svg{width:220px;height:220px;image-rendering:pixelated}
+.warn{font-size:13px;color:var(--bad);background:var(--bad-soft);border-radius:10px;padding:8px 12px}
+
+/* ---------- রেসপন্সিভ ---------- */
+@media (max-width:1100px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .set-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:959px){
+  .sidebar,.desk-only{display:none!important}
+  .bottom-nav{display:flex}
+  .topbar{padding:12px 16px}
+  .content{padding:4px 16px 110px}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .page-head h2{display:none}
+  .page-head{margin-top:4px}
+  .summary{grid-template-columns:repeat(2,1fr)}
+  .toast{bottom:96px}
+  .modal{padding:0;align-items:flex-end}
+  .modal-panel{max-width:none;border-radius:20px 20px 0 0;max-height:94vh}
+  .modal-foot{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+}
+@media (max-width:640px){
+  .kpis{gap:10px}
+  .kpi{padding:14px}
+  .kpi-value{font-size:21px}
+  .delta{flex-wrap:wrap;border-radius:10px;padding:4px 8px;line-height:1.35}
+  .card{padding:16px}
+  .chart-box{height:240px}
+  .set-grid{grid-template-columns:1fr}
+  .bar-cell{display:none}
+  .sum-table th,.sum-table td{padding:10px 10px}
+  .chips.period{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+  .chips.period::-webkit-scrollbar{display:none}
+}
+</style>
+</head>
+<body>
+<div class="loading" id="loading"><div><div class="spinner"></div>লোড হচ্ছে…</div></div>
+
+<div class="connect" id="connect" hidden>
+  <form class="connect-card" id="connect-form" novalidate>
+    <div class="connect-head">
+      <div class="brand-mark">হ</div>
+      <h1>প্রবাসী হিসাব</h1>
+      <p>আপনার Google Sheet-এর সাথে যুক্ত করুন</p>
+    </div>
+    <div class="card stack">
+      <div class="field">
+        <label for="c-url">API লিংক</label>
+        <div class="paste-row"><input class="input" id="c-url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" class="btn" data-paste="c-url">পেস্ট</button></div>
+        <div class="help">Apps Script-এ Deploy করার পর যে লিংক পেয়েছেন (শেষে /exec)</div>
+      </div>
+      <div class="field">
+        <label for="c-key">গোপন কী (Secret key)</label>
+        <div class="paste-row"><input class="input" id="c-key" placeholder="createApiKey চালিয়ে পাওয়া কী" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" class="btn" data-paste="c-key">পেস্ট</button></div>
+      </div>
+      <div class="err" id="c-err" hidden></div>
+      <button type="submit" class="btn primary" id="c-btn" style="padding:12px">কানেক্ট করুন</button>
+    </div>
+    <div class="or">অথবা</div>
+    <button type="button" class="btn" data-action="demo">আগে ডেমো দেখুন (নমুনা ডেটা)</button>
+    <p class="help" style="text-align:center;margin:0">কীভাবে লিংক ও কী পাবেন, তা সেটআপ গাইডে ধাপে ধাপে লেখা আছে।</p>
+  </form>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">হ</div><div><b>প্রবাসী হিসাব</b><small>কাতার ⇄ বাংলাদেশ</small></div></div>
+    <nav class="nav" id="side-nav"></nav>
+    <div class="side-foot" id="side-foot"></div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div class="grow"><h1 id="page-title">ড্যাশবোর্ড</h1><div class="sub" id="page-sub"></div></div>
+      <button type="button" class="status" id="status" data-action="sync"><i></i><span>Google Sheet</span></button>
+      <button class="icon-btn" data-action="refresh" title="রিফ্রেশ" aria-label="রিফ্রেশ"></button>
+      <button class="btn qa desk-only" data-add="qatar"></button>
+      <button class="btn bd desk-only" data-add="bd"></button>
+    </header>
+
+    <div class="content">
+      <section class="view" id="view-dashboard"></section>
+      <section class="view" id="view-qatar"></section>
+      <section class="view" id="view-bd"></section>
+      <section class="view" id="view-settings"></section>
+    </div>
+  </main>
+</div>
+
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head"><span class="tag" id="modal-tag"></span><h2 id="modal-title"></h2><button class="icon-btn" data-close aria-label="বন্ধ করুন"></button></div>
+    <form id="form" novalidate>
+      <div class="modal-body" id="form-body"></div>
+      <div class="modal-foot" id="form-foot"></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="chooser" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="নতুন এন্ট্রি">
+    <div class="modal-head"><h2>কী যোগ করবেন?</h2><button class="icon-btn" data-close aria-label="বন্ধ করুন"></button></div>
+    <div class="modal-body chooser" id="chooser-body"></div>
+  </div>
+</div>
+
+<div class="modal" id="info" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="info-title">
+    <div class="modal-head"><h2 id="info-title"></h2><button class="icon-btn" data-close aria-label="বন্ধ করুন"></button></div>
+    <div class="modal-body" id="info-body"></div>
+  </div>
+</div>
+
+<div id="toast-root"></div>
+
+<script>
+/* =====================================================================
+   প্রবাসী হিসাব — মোবাইল অ্যাপ (PWA)
+   সব ডেটা আগে ফোনেই সেভ হয়, তাই অ্যাপ সাথে সাথে খোলে ও ইন্টারনেট ছাড়াও চলে।
+   ইন্টারনেট থাকলে পেছনে নিজে থেকে Google Sheet-এর সাথে সিংক হয়।
+   ===================================================================== */
+
+const DEFAULT_LISTS = {
+  qatarCategories: ['খাবার','বাসা ভাড়া','যাতায়াত','মোবাইল ও ইন্টারনেট','কেনাকাটা','স্বাস্থ্য','বিল','অন্যান্য'],
+  qatarMethods: ['Cash','Debit Card','Credit Card','Bank Transfer'],
+  bdPurposes: ['পরিবারের খরচ','বাবা-মা','চিকিৎসা','পড়াশোনা','সঞ্চয়','ঋণ পরিশোধ','জমি / বাড়ি','উৎসব','অন্যান্য'],
+  bdRecipients: ['পরিবার','বাবা','মা','ভাই / বোন'],
+  bdMethods: ['ব্যাংক','bKash','Nagad','Rocket','এক্সচেঞ্জ হাউস']
+};
+const LIST_LABELS = {
+  qatarCategories: 'কাতার খরচের ক্যাটাগরি',
+  qatarMethods: 'কাতারে পেমেন্ট মাধ্যম',
+  bdPurposes: 'দেশে পাঠানোর কারণ',
+  bdRecipients: 'কাকে পাঠাই (প্রাপক)',
+  bdMethods: 'টাকা পাঠানোর মাধ্যম'
+};
+
+const KINDS = {
+  qatar: { title:'কাতার খরচ', sub:'কাতারে প্রতিদিনের খরচ (কাতারি রিয়াল)', add:'কাতার খরচ', cur:'QAR', cls:'qa',
+           cat:'category', filters:[['category','qatarCategories','সব ক্যাটাগরি'],['method','qatarMethods','সব মাধ্যম']] },
+  bd:    { title:'বাংলাদেশে পাঠানো', sub:'দেশে যত টাকা পৌঁছেছে (বাংলাদেশি টাকা)', add:'দেশে পাঠানো', cur:'BDT', cls:'bd',
+           cat:'purpose', filters:[['purpose','bdPurposes','সব কারণ'],['recipient','bdRecipients','সব প্রাপক'],['method','bdMethods','সব মাধ্যম']] }
+};
+
+const FORMS = {
+  qatar: [
+    { k:'amount', type:'amount', label:'কত খরচ হলো?', cur:'QR', req:true },
+    { k:'date', type:'date', label:'তারিখ', req:true },
+    { k:'category', type:'pick', list:'qatarCategories', label:'ক্যাটাগরি' },
+    { k:'description', type:'text', label:'কিসের জন্য খরচ?', ph:'যেমন: দুপুরের খাবার, বাস ভাড়া' },
+    { k:'method', type:'pick', list:'qatarMethods', label:'কীভাবে পেমেন্ট করেছেন', opt:true },
+    { k:'notes', type:'textarea', label:'নোট', ph:'অতিরিক্ত কোনো তথ্য…', opt:true }
+  ],
+  bd: [
+    { k:'amount', type:'amount', label:'বাংলাদেশে কত টাকা পৌঁছেছে?', cur:'৳', req:true },
+    { k:'qarSent', type:'amount', label:'কাতার থেকে কত রিয়াল পাঠিয়েছেন', cur:'QR', small:true, opt:true },
+    { k:'date', type:'date', label:'তারিখ', req:true },
+    { k:'recipient', type:'pick', list:'bdRecipients', label:'কাকে পাঠিয়েছেন', opt:true },
+    { k:'purpose', type:'pick', list:'bdPurposes', label:'কেন পাঠিয়েছেন' },
+    { k:'method', type:'pick', list:'bdMethods', label:'কীভাবে পাঠিয়েছেন', opt:true },
+    { k:'description', type:'text', label:'বিবরণ', ph:'যেমন: নভেম্বর মাসের সংসার খরচ', opt:true },
+    { k:'notes', type:'textarea', label:'নোট', ph:'অতিরিক্ত কোনো তথ্য…', opt:true }
+  ]
+};
+
+const PERIODS = [['today','আজ'],['week','এই সপ্তাহ'],['month','এই মাস'],['year','এই বছর'],['all','সব সময়'],['custom','কাস্টম']];
+const PREV_LABEL = { today:'গতকালের তুলনায়', week:'গত সপ্তাহের একই সময়ের তুলনায়', month:'গত মাসের একই সময়ের তুলনায়', year:'গত বছরের একই সময়ের তুলনায়', custom:'আগের সমান সময়ের তুলনায়' };
+const MONTHS = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+const MONTHS_S = ['জানু','ফেব্রু','মার্চ','এপ্রি','মে','জুন','জুলা','আগ','সেপ্টে','অক্টো','নভে','ডিসে'];
+const DAYS = ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'];
+
+const ICONS = {
+  home:'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+  receipt:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3',
+  send:'M22 2 11 13M22 2l-7 20-4-9-9-4z',
+  sliders:'M4 7h9m4 0h3M4 17h3m4 0h9M15 5v4M9 15v4',
+  plus:'M12 5v14M5 12h14',
+  refresh:'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
+  search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4',
+  download:'M12 4v11m0 0-4-4m4 4 4-4M5 20h14',
+  trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
+  external:'M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5',
+  x:'M6 6l12 12M18 6 6 18',
+  check:'M5 12l5 5L20 7'
+};
+const icon = (n, cls='i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[n]}"/></svg>`;
+
+/* ---------------------------- অবস্থা (state) ---------------------------- */
+const S = {
+  qatar: [], bd: [], lists: clone(DEFAULT_LISTS), config: { rate: 33.5, weekStart: 6, userName: '' }, sheetUrl: '',
+  view: 'dashboard',
+  f: {
+    dashboard: { period:'month', from:'', to:'' },
+    qatar: { period:'month', from:'', to:'', sel:{}, q:'', mode:'list', limit:150 },
+    bd:    { period:'year',  from:'', to:'', sel:{}, q:'', mode:'list', limit:150 }
+  },
+  draft: null,
+  charts: {}
+};
+
+/* ---------------------------- ছোট সহায়ক ফাংশন ---------------------------- */
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+const parseD = s => { const p = s.split('-').map(Number); return new Date(p[0], p[1]-1, p[2], 12); };
+const addDays = (s, n) => { const d = parseD(s); d.setDate(d.getDate()+n); return ymd(d); };
+const today = () => ymd(new Date());
+const diffDays = (a, b) => Math.round((parseD(b) - parseD(a)) / 864e5);
+const monthStart = s => s.slice(0,8) + '01';
+const monthEnd = s => { const d = parseD(s); return ymd(new Date(d.getFullYear(), d.getMonth()+1, 0, 12)); };
+const addMonths = (s, n) => { const d = parseD(monthStart(s)); d.setMonth(d.getMonth()+n); return ymd(d); };
+const weekStartOf = s => { const d = parseD(s); d.setDate(d.getDate() - ((d.getDay() - S.config.weekStart + 7) % 7)); return ymd(d); };
+const sum = rows => rows.reduce((a, r) => a + (Number(r.amount) || 0), 0);
+const toNum = v => { const s = String(v == null ? '' : v).replace(/[০-৯]/g, c => '০১২৩৪৫৬৭৮৯'.indexOf(c)).replace(/[,\s]/g,''); return s === '' ? NaN : Number(s); };
+
+function money(n, cur, compact){
+  n = Number(n) || 0;
+  if (cur === 'BDT') {
+    if (compact && Math.abs(n) >= 100000) return '৳' + trim(n/100000) + ' লাখ';
+    if (compact && Math.abs(n) >= 1000) return '৳' + trim(n/1000) + 'K';
+    return '৳' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  }
+  if (compact && Math.abs(n) >= 1000) return 'QR ' + trim(n/1000) + 'K';
+  return 'QR ' + n.toLocaleString('en-US', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+}
+function trim(x){ return (Math.round(x * 10) / 10).toLocaleString('en-US'); }
+const fmtLong = s => { const d = parseD(s); return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+const fmtShort = s => { const d = parseD(s); return `${d.getDate()} ${MONTHS_S[d.getMonth()]}`; };
+const fmtMonth = s => `${MONTHS[+s.slice(5,7)-1]} ${s.slice(0,4)}`;
+const firstChar = s => Array.from(String(s || '•'))[0];
+
+/* ---------------------------- সময়কাল হিসাব ---------------------------- */
+function getRange(f, kinds){
+  const t = today();
+  let start, end, prevStart = null;
+  switch (f.period) {
+    case 'today': start = end = t; prevStart = addDays(t, -1); break;
+    case 'week': start = weekStartOf(t); end = addDays(start, 6); prevStart = addDays(start, -7); break;
+    case 'month': start = monthStart(t); end = monthEnd(t); prevStart = addMonths(t, -1); break;
+    case 'year': start = t.slice(0,4) + '-01-01'; end = t.slice(0,4) + '-12-31'; prevStart = (+t.slice(0,4) - 1) + '-01-01'; break;
+    case 'custom': {
+      start = f.from || monthStart(t); end = f.to || t;
+      if (start > end) [start, end] = [end, start];
+      prevStart = addDays(start, -(diffDays(start, end) + 1));
+      break;
+    }
+    default: {
+      const dates = (kinds || ['qatar','bd']).flatMap(k => S[k].map(r => r.date)).sort();
+      start = dates[0] || t; end = t > (dates[dates.length-1] || t) ? t : dates[dates.length-1];
+    }
+  }
+  // আগের সময়ের সাথে "একই দিন পর্যন্ত" তুলনা — যেন অর্ধেক মাসকে পুরো মাসের সাথে তুলনা না হয়
+  const effEnd = (start <= t && end > t) ? t : end;
+  const days = diffDays(start, effEnd) + 1;
+  let prev = null;
+  if (prevStart) {
+    let prevEnd = addDays(prevStart, days - 1);
+    if (prevEnd >= start) prevEnd = addDays(start, -1);
+    prev = { start: prevStart, end: prevEnd };
+  }
+  let label;
+  switch (f.period) {
+    case 'today': label = fmtLong(t); break;
+    case 'week': label = `${fmtShort(start)} – ${fmtShort(end)}`; break;
+    case 'month': label = fmtMonth(start); break;
+    case 'year': label = start.slice(0,4) + ' সাল'; break;
+    case 'custom': label = `${fmtShort(start)} ${start.slice(0,4)} – ${fmtShort(end)} ${end.slice(0,4)}`; break;
+    default: label = 'শুরু থেকে আজ পর্যন্ত';
+  }
+  return { start, end, prev, days: Math.max(1, days), label, period: f.period };
+}
+const inR = (r, R) => r.date >= R.start && r.date <= R.end;
+
+/* ---------------------------- ফোনের স্টোরেজ ---------------------------- */
+const store = {
+  get(k, d){ try { const v = localStorage.getItem('ph.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v){ try { localStorage.setItem('ph.' + k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k){ try { localStorage.removeItem('ph.' + k); } catch (e) {} }
+};
+
+let CONN = store.get('conn', null);      // { url, key } অথবা { demo: true }
+let BASE = null;                          // Google Sheet থেকে শেষবার আনা ডেটা
+let OUTBOX = store.get('outbox', []);     // যে পরিবর্তনগুলো এখনো Sheet-এ যায়নি
+const SYNC = { state: 'idle', at: store.get('syncedAt', ''), busy: false, again: false, error: '' };
+const isDemo = () => !!(CONN && CONN.demo);
+
+function stamp(){ const n = new Date(); return ymd(n) + ' ' + pad(n.getHours()) + ':' + pad(n.getMinutes()); }
+function newId(kind){
+  const a = new Uint8Array(6); crypto.getRandomValues(a);
+  return (kind === 'qatar' ? 'QA-' : 'BD-') + Array.from(a, b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+function newOpId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+/** সার্ভার যেভাবে হিসাব করে, ফোনেও সেভাবে এন্ট্রি তৈরি */
+function localRecord(kind, rec, prev){
+  const r = clone(rec);
+  r.amount = Math.round(toNum(r.amount) * 100) / 100;
+  if (kind === 'qatar') r.category = r.category || 'অন্যান্য';
+  else {
+    r.purpose = r.purpose || 'অন্যান্য';
+    r.qarSent = toNum(r.qarSent) > 0 ? Math.round(toNum(r.qarSent) * 100) / 100 : '';
+    r.rate = r.qarSent ? Math.round(r.amount / r.qarSent * 10000) / 10000 : '';
+  }
+  r.createdAt = prev ? prev.createdAt : stamp();
+  r.updatedAt = stamp();
+  return normalize(r);
+}
+function applyLocal(op){
+  if (op.type === 'save') {
+    const arr = S[op.kind]; const i = arr.findIndex(r => r.id === op.rec.id);
+    const rec = localRecord(op.kind, op.rec, i > -1 ? arr[i] : null);
+    if (!isDemo()) rec._pending = true;
+    if (i > -1) arr[i] = rec; else arr.push(rec);
+  } else if (op.type === 'delete') {
+    S[op.kind] = S[op.kind].filter(r => r.id !== op.id);
+  } else if (op.type === 'settings') {
+    if (op.payload.lists) S.lists = Object.assign(clone(DEFAULT_LISTS), clone(op.payload.lists));
+    if (op.payload.config) { S.config = Object.assign(S.config, clone(op.payload.config)); S.config.rate = Number(S.config.rate) || 33.5; S.config.weekStart = Number(S.config.weekStart); }
+  }
+}
+function snapshot(){
+  const strip = ({ _pending, ...r }) => r;
+  return { qatar: S.qatar.map(strip), bd: S.bd.map(strip), lists: clone(S.lists), config: clone(S.config), sheetUrl: S.sheetUrl };
+}
+/** Sheet-এর ডেটার উপর অপেক্ষমাণ পরিবর্তনগুলো বসিয়ে বর্তমান অবস্থা তৈরি */
+function rebuild(){ ingest(BASE || {}); OUTBOX.forEach(applyLocal); }
+function persist(){
+  const ok = store.set('base', BASE) && store.set('outbox', OUTBOX);
+  if (!ok) toast('ফোনের স্টোরেজ ভরে গেছে — ডেটা সেভ করা যাচ্ছে না', true);
+}
+
+/** প্রতিটি পরিবর্তন: সাথে সাথে ফোনে সেভ, তারপর পেছনে Sheet-এ পাঠানো */
+function commit(op){
+  op.opId = newOpId();
+  if (isDemo()) { applyLocal(op); BASE = snapshot(); persist(); return; }
+  if (op.type === 'save' || op.type === 'delete') {
+    const id = op.type === 'save' ? op.rec.id : op.id;
+    OUTBOX = OUTBOX.filter(o => !((o.type === 'save' && o.rec.id === id) || (o.type === 'delete' && o.id === id)));
+  }
+  if (op.type === 'settings') OUTBOX = OUTBOX.filter(o => o.type !== 'settings');
+  OUTBOX.push(op);
+  applyLocal(op);
+  persist();
+  setSync(navigator.onLine ? 'pending' : 'offline');
+  scheduleSync(400);
+}
+
+/* ---------------------------- Google Sheet-এর সাথে যোগাযোগ ---------------------------- */
+async function remote(action, extra, conn){
+  conn = conn || CONN;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 45000);
+  let res;
+  try {
+    res = await fetch(conn.url, {
+      method: 'POST', redirect: 'follow', cache: 'no-store', signal: ctrl.signal,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action, key: conn.key }, extra || {}))
+    });
+  } catch (e) {
+    const err = new Error('সার্ভারে পৌঁছানো যায়নি। ইন্টারনেট সংযোগ দেখুন।'); err.network = true; throw err;
+  } finally { clearTimeout(timer); }
+  let j;
+  try { j = await res.json(); }
+  catch (e) { throw new Error('সার্ভার থেকে সঠিক উত্তর আসেনি। API লিংক ঠিক আছে কিনা দেখুন।'); }
+  if (!j.ok) { const err = new Error(j.error || 'অজানা সমস্যা'); err.auth = !!j.auth; throw err; }
+  return j;
+}
+
+let syncTimer;
+function scheduleSync(ms){ clearTimeout(syncTimer); syncTimer = setTimeout(() => sync(false), ms || 0); }
+
+async function sync(manual){
+  if (!CONN || isDemo()) { if (manual) toast('ডেমো মোডে সিংক নেই — সেটিংস থেকে আসল Sheet-এ কানেক্ট করুন'); return; }
+  if (SYNC.busy) { SYNC.again = true; return; }
+  if (!navigator.onLine) { setSync('offline'); if (manual) toast('ইন্টারনেট নেই — নেট এলে অটো সিংক হবে', true); return; }
+  SYNC.busy = true; setSync('syncing');
+  const ops = OUTBOX.slice();
+  try {
+    const j = await remote(ops.length ? 'sync' : 'pull', ops.length ? { ops } : null);
+    const sent = new Set(ops.map(o => o.opId));
+    OUTBOX = OUTBOX.filter(o => !sent.has(o.opId));
+    BASE = j.data;
+    SYNC.at = new Date().toISOString(); store.set('syncedAt', SYNC.at);
+    rebuild(); persist();
+    const failed = (j.results || []).filter(r => !r.ok);
+    setSync(OUTBOX.length ? 'pending' : 'ok');
+    if (failed.length) toast(`${failed.length}টি পরিবর্তন Sheet-এ সেভ হয়নি: ${failed[0].error}`, true);
+    else if (manual) toast('সব ডেটা Google Sheet-এর সাথে মিলে গেছে ✔');
+    softRender();
+  } catch (e) {
+    SYNC.error = e.message;
+    setSync(e.auth ? 'auth' : e.network ? 'offline' : 'error');
+    if (manual || e.auth) toast(e.message, true);
+  } finally {
+    SYNC.busy = false;
+    if (SYNC.again) { SYNC.again = false; scheduleSync(300); }
+  }
+}
+
+function setSync(state){
+  SYNC.state = state;
+  const st = $('#status'); if (!st) return;
+  const n = OUTBOX.length;
+  const text = {
+    demo: 'ডেমো মোড', ok: 'সিংক হয়েছে', syncing: 'সিংক হচ্ছে…', pending: `${n}টি অপেক্ষায়`,
+    offline: n ? `অফলাইন · ${n}টি অপেক্ষায়` : 'অফলাইন', error: 'সিংক হয়নি', auth: 'আবার কানেক্ট করুন'
+  }[state] || 'Google Sheet';
+  st.className = 'status ' + state;
+  st.querySelector('span').textContent = text;
+  st.title = state === 'error' || state === 'auth' ? SYNC.error : 'চাপ দিলে এখনই Google Sheet-এর সাথে সিংক হবে';
+  renderConnCard();
+}
+
+/** পেছনের সিংক শেষে স্ক্রিন আপডেট — সেটিংসে কিছু লেখার মাঝখানে থাকলে বিরক্ত করবে না */
+function softRender(){
+  if (S.view === 'settings') { renderConnCard(); return; }
+  render();
+}
+
+function makeDemoData(){
+  let seed = 20261031;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+  const between = (a, b) => Math.round(a + rnd() * (b - a));
+  const t = today(); const qatar = [], bd = []; let n = 0;
+  const id = p => p + '-' + (++n).toString(16).toUpperCase().padStart(6, '0');
+  const q = (date, category, description, amount, method, notes='') => qatar.push({ id:id('QA'), date, category, description, amount, method, notes, createdAt: date + ' 12:00', updatedAt: date + ' 12:00' });
+  const b = (date, recipient, purpose, description, amount, method, notes='') => {
+    const rate = 33.2 + rnd() * 0.7; const qarSent = Math.round(amount / rate);
+    bd.push({ id:id('BD'), date, recipient, purpose, description, amount, qarSent, rate: Math.round(amount / qarSent * 10000) / 10000, method, notes, createdAt: date + ' 12:00', updatedAt: date + ' 12:00' });
+  };
+  const foods = ['দুপুরের খাবার','রাতের খাবার','চা-নাস্তা','গ্রোসারি (বাজার)'];
+  for (let i = 400; i >= 0; i--) {
+    const d = addDays(t, -i); const day = +d.slice(8);
+    if (day === 1) q(d, 'বাসা ভাড়া', 'রুম ভাড়া (শেয়ারিং)', 750, 'Bank Transfer');
+    if (day === 3) q(d, 'মোবাইল ও ইন্টারনেট', 'Ooredoo রিচার্জ', between(40, 70), 'Cash');
+    if (day === 15) q(d, 'বিল', 'বিদ্যুৎ ও পানির ভাগ', between(60, 110), 'Cash');
+    const meals = rnd() < 0.85 ? 1 + Math.floor(rnd() * 2) : 0;
+    for (let m = 0; m < meals; m++) q(d, 'খাবার', foods[Math.floor(rnd() * foods.length)], between(8, 35), rnd() < 0.7 ? 'Cash' : 'Debit Card');
+    if (rnd() < 0.2) q(d, 'যাতায়াত', rnd() < 0.6 ? 'মেট্রো / বাস' : 'Uber / Karwa ট্যাক্সি', between(5, 40), 'Debit Card');
+    if (rnd() < 0.05) q(d, 'কেনাকাটা', rnd() < 0.5 ? 'জামা-কাপড়' : 'দরকারি জিনিস', between(50, 220), 'Debit Card', rnd() < 0.4 ? 'সেলে কিনেছি' : '');
+    if (rnd() < 0.025) q(d, 'স্বাস্থ্য', 'ফার্মেসি — ওষুধ', between(20, 90), 'Cash');
+    if (day === 10) b(d, 'পরিবার', 'পরিবারের খরচ', `${MONTHS[parseD(d).getMonth()]} মাসের সংসার খরচ`, between(45, 60) * 1000, 'ব্যাংক');
+    if (day === 22) b(d, 'মা', 'বাবা-মা', 'মায়ের হাতখরচ', between(10, 15) * 1000, 'bKash');
+    if (rnd() < 0.02) b(d, 'বাবা', 'চিকিৎসা', 'বাবার ডাক্তার ও ওষুধ', between(5, 15) * 1000, 'bKash', 'জরুরি পাঠানো হয়েছে');
+    if (rnd() < 0.012) b(d, 'ভাই / বোন', 'পড়াশোনা', 'ছোট ভাইয়ের কলেজ ফি', between(6, 12) * 1000, 'Nagad');
+  }
+  return { qatar, bd, lists: clone(DEFAULT_LISTS), config: { rate: 33.5, weekStart: 6, userName: '' } };
+}
+
+/* ---------------------------- চালু করা ---------------------------- */
+function boot(){
+  applyTheme(getTheme());
+  buildShell();
+  const fromLink = readConnectLink();
+  if (fromLink && !(CONN && CONN.url === fromLink.url && CONN.key === fromLink.key)) {
+    showConnect(fromLink.url, fromLink.key);
+    connectNow();
+    return;
+  }
+  if (!CONN) { showConnect(); return; }
+  startApp();
+}
+
+function startApp(){
+  BASE = store.get('base', null);
+  if (isDemo() && !BASE) { BASE = makeDemoData(); store.set('base', BASE); }
+  rebuild();
+  $('#connect').hidden = true;
+  $('#loading').hidden = true;
+  setSync(isDemo() ? 'demo' : !navigator.onLine ? 'offline' : OUTBOX.length ? 'pending' : 'ok');
+  go(S.view || 'dashboard');
+  if (!isDemo()) sync(false);
+  // হোম স্ক্রিনের আইকন চেপে ধরে "খরচ যোগ" শর্টকাট থেকে এলে সরাসরি ফর্ম খুলবে
+  const add = new URLSearchParams(location.search).get('add');
+  if (add && KINDS[add]) { history.replaceState(null, '', location.pathname); openForm(add); }
+}
+
+/* ---------------------------- সংযোগ (Connect) ---------------------------- */
+function showConnect(url, key){
+  $('#loading').hidden = true;
+  $('#connect').hidden = false;
+  $('#c-url').value = url || '';
+  $('#c-key').value = key || '';
+  $('#c-err').hidden = true;
+}
+
+/** QR কোড বা লিংকের #c=… অংশ থেকে সংযোগের তথ্য পড়া */
+function readConnectLink(){
+  const m = location.hash.match(/^#c=([\w-]+)/);
+  if (!m) return null;
+  history.replaceState(null, '', location.pathname + location.search);
+  try {
+    const j = JSON.parse(atob(m[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return j.u && j.k ? { url: j.u, key: j.k } : null;
+  } catch (e) { return null; }
+}
+function connectLink(){
+  const code = btoa(JSON.stringify({ u: CONN.url, k: CONN.key })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return location.origin + location.pathname + '#c=' + code;
+}
+
+async function connectNow(){
+  const url = $('#c-url').value.trim(), key = $('#c-key').value.trim();
+  const err = $('#c-err'); const btn = $('#c-btn');
+  const fail = msg => { err.textContent = msg; err.hidden = false; };
+  err.hidden = true;
+  const okUrl = /^https:\/\/script\.google\.com\/(a\/macros\/[^/]+|macros)\/s\/[\w-]+\/exec$/.test(url)
+    || (location.hostname === 'localhost' && /^http:\/\/localhost[:/]/.test(url)); // শুধু কম্পিউটারে পরীক্ষার জন্য
+  if (!okUrl) return fail('API লিংকটি ঠিক নয়। এটি https://script.google.com/macros/s/…/exec এর মতো হতে হবে।');
+  if (key.length < 20) return fail('গোপন কী-টি ঠিকমতো পেস্ট করুন।');
+  btn.disabled = true; btn.textContent = 'সংযোগ হচ্ছে…';
+  try {
+    const j = await remote('pull', null, { url, key });
+    CONN = { url, key }; store.set('conn', CONN);
+    BASE = j.data; OUTBOX = [];
+    SYNC.at = new Date().toISOString(); store.set('syncedAt', SYNC.at);
+    persist();
+    startApp();
+    toast('সংযোগ সফল ✔ আপনার Google Sheet-এর ডেটা চলে এসেছে');
+  } catch (e) {
+    fail(e.network
+      ? 'সংযোগ হয়নি। ইন্টারনেট আছে কিনা, আর Deploy করার সময় "Who has access: Anyone" দেওয়া হয়েছে কিনা দেখুন।'
+      : e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'কানেক্ট করুন';
+  }
+}
+
+function startDemo(){
+  CONN = { demo: true }; store.set('conn', CONN);
+  BASE = null; OUTBOX = []; store.del('base'); store.del('outbox');
+  startApp();
+}
+
+function disconnect(){
+  CONN = null; BASE = null; OUTBOX = [];
+  ['conn', 'base', 'outbox', 'syncedAt'].forEach(store.del);
+  SYNC.at = ''; S.draft = null; S.view = 'dashboard';
+  ingest({});
+  showConnect();
+}
+
+/* ---------------------------- ইনস্টল ---------------------------- */
+let installEvt = null;
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; softRender(); });
+window.addEventListener('appinstalled', () => { installEvt = null; toast('অ্যাপ ইনস্টল হয়েছে ✔ হোম স্ক্রিন থেকে খুলুন'); softRender(); });
+async function installApp(){
+  if (!installEvt) return toast('Chrome-এর ⋮ মেনু থেকে "অ্যাপ ইনস্টল করুন" বা "Add to Home screen" চাপুন');
+  installEvt.prompt();
+  try { await installEvt.userChoice; } catch (e) {}
+  installEvt = null; softRender();
+}
+function installBanner(){
+  if (isStandalone() || !installEvt || store.get('hideInstall', false)) return '';
+  return `<div class="banner"><p><b>📲 অ্যাপটি ফোনে ইনস্টল করুন</b> — হোম স্ক্রিন থেকে সাথে সাথে খুলবে, ইন্টারনেট ছাড়াও চলবে।</p>
+    <button class="btn ghost" data-action="hide-install">পরে</button><button class="btn primary" data-action="install">ইনস্টল করুন</button></div>`;
+}
+
+/* ---------------------------- QR কোড (অন্য ফোনে কানেক্ট) ---------------------------- */
+function loadScript(src){
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+}
+async function showQR(){
+  const body = $('#info-body');
+  $('#info-title').textContent = 'অন্য ফোনে কানেক্ট করুন';
+  body.innerHTML = '<div class="empty"><div class="spinner"></div></div>';
+  openModal('#info');
+  try {
+    if (typeof qrcode === 'undefined') await loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js');
+    const link = connectLink();
+    const qr = qrcode(0, 'M'); qr.addData(link); qr.make();
+    body.innerHTML = `<div class="qr-box">
+      <div class="qr">${qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true })}</div>
+      <p style="margin:0">ফোনের ক্যামেরা দিয়ে এই QR কোড স্ক্যান করুন — অ্যাপ খুলে নিজে থেকেই কানেক্ট হয়ে যাবে।</p>
+      <button class="btn" data-action="copy-link">লিংক কপি করুন</button>
+      <div class="warn">⚠️ এই QR কোড বা লিংক কাউকে দেবেন না — এতে আপনার গোপন কী আছে।</div>
+    </div>`;
+  } catch (e) {
+    body.innerHTML = `<div class="qr-box"><p>QR কোড তৈরি করা যায়নি (ইন্টারনেট দরকার)। নিচের বাটনে লিংক কপি করে নিজের WhatsApp-এ পাঠান, তারপর ফোনে খুলুন।</p><button class="btn" data-action="copy-link">লিংক কপি করুন</button><div class="warn">⚠️ এই লিংক কাউকে দেবেন না — এতে আপনার গোপন কী আছে।</div></div>`;
+  }
+}
+async function copyLink(){
+  try { await navigator.clipboard.writeText(connectLink()); toast('লিংক কপি হয়েছে — নিজের WhatsApp-এ পাঠিয়ে ফোনে খুলুন'); }
+  catch (e) { toast('কপি করা যায়নি', true); }
+}
+function ingest(d){
+  S.qatar = (d.qatar || []).map(normalize);
+  S.bd = (d.bd || []).map(normalize);
+  S.lists = Object.assign(clone(DEFAULT_LISTS), d.lists || {});
+  Object.keys(DEFAULT_LISTS).forEach(k => { if (!Array.isArray(S.lists[k])) S.lists[k] = []; });
+  S.config = Object.assign({ rate: 33.5, weekStart: 6, userName: '' }, d.config || {});
+  S.config.rate = Number(S.config.rate) || 33.5;
+  S.config.weekStart = Number(S.config.weekStart);
+  S.sheetUrl = d.sheetUrl || '';
+}
+function normalize(r){ r.amount = Number(r.amount) || 0; if (r.qarSent !== undefined) r.qarSent = Number(r.qarSent) || ''; r.date = String(r.date).slice(0,10); return r; }
+
+const NAV = [['dashboard','ড্যাশবোর্ড','home'],['qatar','কাতার খরচ','receipt'],['bd','বাংলাদেশে পাঠানো','send'],['settings','সেটিংস','sliders']];
+const TITLES = { dashboard:'ড্যাশবোর্ড', qatar:'কাতার খরচ', bd:'বাংলাদেশে পাঠানো', settings:'সেটিংস' };
+
+function buildShell(){
+  $('#side-nav').innerHTML = NAV.map(([v, l, ic]) => `<button class="nav-btn" data-nav="${v}">${icon(ic)}<span>${l}</span></button>`).join('');
+  const short = { dashboard:'হোম', qatar:'কাতার', bd:'বাংলাদেশ', settings:'সেটিংস' };
+  const b = NAV.map(([v, , ic]) => `<button class="nav-btn" data-nav="${v}">${icon(ic)}<span>${short[v]}</span></button>`);
+  b.splice(2, 0, `<button class="fab" data-action="choose" aria-label="নতুন এন্ট্রি">${icon('plus')}</button>`);
+  $('#bottom-nav').innerHTML = b.join('');
+  $('[data-action="refresh"]').innerHTML = icon('refresh');
+  $('.btn.qa[data-add]').innerHTML = icon('plus') + KINDS.qatar.add;
+  $('.btn.bd[data-add]').innerHTML = icon('plus') + KINDS.bd.add;
+  $$('.modal [data-close]').forEach(el => { if (el.classList.contains('icon-btn')) el.innerHTML = icon('x'); });
+  $('#chooser-body').innerHTML = ['qatar','bd'].map(k => `
+    <button class="choose" data-add="${k}" style="--c:var(--${KINDS[k].cls});--soft:var(--${KINDS[k].cls}-soft)">
+      <span class="ci">${icon(k === 'qatar' ? 'receipt' : 'send')}</span>
+      <span><b>${k === 'qatar' ? 'কাতারে খরচ' : 'বাংলাদেশে টাকা পাঠানো'}</b><span>${k === 'qatar' ? 'আজকের খরচ লিখুন (রিয়াল)' : 'দেশে কত টাকা পৌঁছেছে (টাকা)'}</span></span>
+    </button>`).join('');
+  ['qatar','bd'].forEach(buildRecordsShell);
+}
+
+function go(view){
+  S.view = view;
+  $$('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+  $$('[data-nav]').forEach(b => b.classList.toggle('active', b.dataset.nav === view));
+  $('#page-title').textContent = TITLES[view];
+  window.scrollTo(0, 0);
+  render();
+}
+function render(){
+  const name = S.config.userName ? `আসসালামু আলাইকুম, ${S.config.userName} · ` : '';
+  $('#page-sub').textContent = name + fmtLong(today());
+  $('#side-foot').innerHTML = `রেট: <b>১ QR = ${S.config.rate} ৳</b><br><span>সেটিংস থেকে বদলাতে পারবেন</span>`;
+  if (S.view === 'dashboard') renderDashboard();
+  else if (S.view === 'settings') renderSettings();
+  else renderRecords(S.view);
+}
+
+/* ---------------------------- ড্যাশবোর্ড ---------------------------- */
+function periodBar(scope){
+  const f = S.f[scope];
+  return `<div class="period-wrap">
+    <div class="chips period" data-scope="${scope}">${PERIODS.map(([k, l]) => `<button class="chip ${f.period === k ? 'active' : ''}" data-period="${k}">${l}</button>`).join('')}</div>
+    <div class="custom-range" data-scope="${scope}" ${f.period === 'custom' ? '' : 'hidden'}>
+      <input type="date" data-range="from" value="${esc(f.from)}" aria-label="শুরুর তারিখ"> <span class="muted">থেকে</span>
+      <input type="date" data-range="to" value="${esc(f.to)}" aria-label="শেষ তারিখ">
+    </div>
+  </div>`;
+}
+function deltaHtml(cur, prev, R, bad){
+  if (!R.prev) return '';
+  const lbl = PREV_LABEL[R.period] || '';
+  if (!prev) return cur ? `<div class="delta">নতুন <span>· ${lbl}</span></div>` : '';
+  const pct = Math.round((cur - prev) / prev * 100);
+  if (pct === 0) return `<div class="delta">— একই <span>· ${lbl}</span></div>`;
+  const up = pct > 0;
+  const cls = bad ? (up ? 'bad' : 'good') : '';
+  return `<div class="delta ${cls}">${up ? '▲' : '▼'} ${Math.abs(pct)}% ${up ? 'বেশি' : 'কম'} <span>· ${lbl}</span></div>`;
+}
+
+function renderDashboard(){
+  const el = $('#view-dashboard');
+  const f = S.f.dashboard; const R = getRange(f); const rate = S.config.rate;
+  const qa = S.qatar.filter(r => inR(r, R)), bd = S.bd.filter(r => inR(r, R));
+  const qaT = sum(qa), bdT = sum(bd);
+  const qaP = R.prev ? sum(S.qatar.filter(r => inR(r, R.prev))) : 0;
+  const bdP = R.prev ? sum(S.bd.filter(r => inR(r, R.prev))) : 0;
+  const qaBDT = qaT * rate; const tot = qaBDT + bdT;
+  const qaPct = tot ? Math.round(qaBDT / tot * 100) : 0; const bdPct = tot ? 100 - qaPct : 0;
+  const empty = !S.qatar.length && !S.bd.length;
+
+  el.innerHTML = `
+    ${installBanner()}
+    ${empty ? `<div class="welcome"><div><h3>স্বাগতম! চলুন হিসাব শুরু করি</h3><p>প্রথম খরচ বা দেশে পাঠানো টাকার তথ্য যোগ করুন — সব কিছু অটোমেটিক Google Sheet-এ সেভ হবে।</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn qa" data-add="qatar">${icon('plus')}কাতার খরচ</button><button class="btn bd" data-add="bd">${icon('plus')}দেশে পাঠানো</button></div></div>` : ''}
+    <div class="toolbar" style="margin-top:14px">${periodBar('dashboard')}<span class="range-label">${esc(R.label)}</span></div>
+    <div class="grid kpis">
+      <div class="card kpi" style="--c:var(--qa)">
+        <div class="kpi-label"><span class="dot"></span>কাতারে খরচ</div>
+        <div class="kpi-value num">${money(qaT, 'QAR')}</div>
+        <div class="kpi-sub num">≈ ${money(qaBDT, 'BDT')} · ${qa.length}টি এন্ট্রি</div>
+        ${deltaHtml(qaT, qaP, R, true)}
+      </div>
+      <div class="card kpi" style="--c:var(--bd)">
+        <div class="kpi-label"><span class="dot"></span>বাংলাদেশে পাঠানো</div>
+        <div class="kpi-value num">${money(bdT, 'BDT')}</div>
+        <div class="kpi-sub num">≈ ${money(bdT / rate, 'QAR')} · ${bd.length} বার</div>
+        ${deltaHtml(bdT, bdP, R, false)}
+      </div>
+      <div class="card kpi">
+        <div class="kpi-label"><span class="dot" style="background:var(--muted)"></span>কাতারে দৈনিক গড় খরচ</div>
+        <div class="kpi-value num">${money(Math.round(qaT / R.days * 100) / 100, 'QAR')}</div>
+        <div class="kpi-sub num">${R.days} দিনের হিসাবে · ≈ ${money(qaT / R.days * rate, 'BDT')}</div>
+        ${R.period !== 'today' ? `<div class="delta"><span>মাসে আনুমানিক</span> ${money(Math.round(qaT / R.days * 30), 'QAR')}</div>` : ''}
+      </div>
+      <div class="card kpi">
+        <div class="kpi-label">টাকা কোথায় বেশি যাচ্ছে?</div>
+        <div class="split" role="img" aria-label="কাতার ${qaPct}%, বাংলাদেশ ${bdPct}%">
+          ${tot ? `<span style="width:${qaPct}%;background:var(--qa)"></span><span style="width:${bdPct}%;background:var(--bd)"></span>` : ''}
+        </div>
+        <div class="split-legend"><span><i class="sw" style="background:var(--qa)"></i>কাতার <b>${qaPct}%</b></span><span><i class="sw" style="background:var(--bd)"></i>বাংলাদেশ <b>${bdPct}%</b></span></div>
+        <div class="kpi-sub" style="margin-top:8px">${!tot ? 'এই সময়ে কোনো এন্ট্রি নেই' : bdPct > qaPct ? `মোট টাকার বেশিরভাগ বাংলাদেশে যাচ্ছে` : bdPct < qaPct ? 'এই সময়ে কাতারে খরচ বেশি হয়েছে' : 'দুই দিকে সমান'}</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head">
+        <div><h3>মাসিক তুলনা — কাতার বনাম বাংলাদেশ</h3><div class="hint">গত ১২ মাস · সব টাকায় (৳) দেখানো হয়েছে, কাতারের খরচ ১ QR = ${rate} ৳ ধরে</div></div>
+        <div class="legend"><span><i class="sw" style="background:var(--qa)"></i>কাতারে খরচ</span><span><i class="sw" style="background:var(--bd)"></i>বাংলাদেশে পাঠানো</span></div>
+      </div>
+      <div class="chart-box"><canvas id="ch-monthly" role="img" aria-label="গত ১২ মাসের কাতার খরচ ও বাংলাদেশে পাঠানো টাকার তুলনা"></canvas></div>
+    </div>
+
+    <div class="grid two" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-head"><div><h3>কাতারে কোন খাতে খরচ</h3><div class="hint">${esc(R.label)}</div></div><button class="btn ghost" data-nav="qatar">সব দেখুন</button></div>
+        ${rankHtml(qa, 'category', 'QAR', 'qa')}
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h3>বাংলাদেশে কেন পাঠানো হয়েছে</h3><div class="hint">${esc(R.label)}</div></div><button class="btn ghost" data-nav="bd">সব দেখুন</button></div>
+        ${rankHtml(bd, 'purpose', 'BDT', 'bd')}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-head"><div><h3>কাতারে খরচের ধারা</h3><div class="hint" id="trend-hint"></div></div></div>
+      <div class="chart-box"><canvas id="ch-trend" role="img" aria-label="কাতারে খরচের ধারা"></canvas></div>
+    </div>
+
+    <div class="grid two">
+      <div class="card">
+        <div class="card-head"><h3>সাম্প্রতিক কাতার খরচ</h3><button class="btn ghost" data-nav="qatar">সব দেখুন</button></div>
+        ${recentHtml('qatar')}
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>সাম্প্রতিক দেশে পাঠানো</h3><button class="btn ghost" data-nav="bd">সব দেখুন</button></div>
+        ${recentHtml('bd')}
+      </div>
+    </div>`;
+  drawMonthly();
+  drawTrend(R, qa);
+}
+
+function rankHtml(rows, key, cur, cls){
+  if (!rows.length) return `<div class="empty">এই সময়ে কোনো এন্ট্রি নেই</div>`;
+  const m = new Map();
+  rows.forEach(r => { const k = r[key] || 'অন্যান্য'; m.set(k, (m.get(k) || 0) + r.amount); });
+  const total = sum(rows);
+  let arr = [...m.entries()].sort((a, b) => b[1] - a[1]);
+  if (arr.length > 7) { const rest = arr.slice(6).reduce((a, x) => a + x[1], 0); arr = arr.slice(0, 6).concat([['বাকি সব', rest]]); }
+  const max = arr[0][1];
+  return `<div class="rank">${arr.map(([k, v]) => `
+    <div class="rank-row" title="${esc(k)}: ${money(v, cur)}">
+      <span class="nm">${esc(k)}</span><span class="v num">${money(v, cur)}<small>${Math.round(v / total * 100)}%</small></span>
+      <div class="mini-bar" style="--c:var(--${cls})"><span style="width:${Math.max(2, v / max * 100)}%"></span></div>
+    </div>`).join('')}</div>`;
+}
+
+function recentHtml(kind){
+  const rows = [...S[kind]].sort((a, b) => (b.date + (b.createdAt || '')).localeCompare(a.date + (a.createdAt || ''))).slice(0, 5);
+  if (!rows.length) return `<div class="empty"><b>এখনো কোনো এন্ট্রি নেই</b><button class="btn ${KINDS[kind].cls}" data-add="${kind}" style="margin-top:10px">${icon('plus')}যোগ করুন</button></div>`;
+  return `<div class="tx-list">${rows.map(r => txHtml(kind, r, true)).join('')}</div>`;
+}
+
+function txHtml(kind, r, showDate){
+  const K = KINDS[kind];
+  const cat = r[K.cat] || 'অন্যান্য';
+  const title = r.description || cat;
+  const sub = kind === 'qatar'
+    ? [cat, r.method].filter(Boolean)
+    : [r.recipient, cat, r.method].filter(Boolean);
+  if (showDate) sub.unshift(fmtShort(r.date));
+  const amt = kind === 'qatar' ? money(r.amount, 'QAR') : money(r.amount, 'BDT');
+  const small = (kind === 'bd' && r.qarSent ? `<small>${money(r.qarSent, 'QAR')} পাঠানো</small>` : '')
+    + (r._pending ? '<small class="pend">⏳ সিংক বাকি</small>' : '');
+  return `<button class="tx" data-edit="${kind}" data-id="${esc(r.id)}" style="--c:var(--${K.cls});--soft:var(--${K.cls}-soft)">
+    <span class="tx-icon">${esc(firstChar(cat))}</span>
+    <span class="tx-main"><span class="tx-title">${esc(title)}</span><span class="tx-sub">${sub.map(esc).join(' · ')}</span>${r.notes ? `<span class="tx-note">📝 ${esc(r.notes)}</span>` : ''}</span>
+    <span class="tx-amt num">${amt}${small}</span>
+  </button>`;
+}
+
+/* ---------------------------- চার্ট ---------------------------- */
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function chartBase(){
+  const text = cssVar('--muted'), grid = cssVar('--border'), surface = cssVar('--surface'), ink = cssVar('--text');
+  return {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: surface, titleColor: ink, bodyColor: ink, borderColor: grid, borderWidth: 1, padding: 10, boxPadding: 4, usePointStyle: true,
+                 titleFont: { family: 'Hind Siliguri', weight: '600' }, bodyFont: { family: 'Hind Siliguri' } }
+    },
+    scales: {
+      x: { grid: { display: false }, border: { color: grid }, ticks: { color: text, font: { family: 'Hind Siliguri', size: 12 }, maxRotation: 0, autoSkipPadding: 8 } },
+      y: { beginAtZero: true, grid: { color: grid, drawTicks: false }, border: { display: false }, ticks: { color: text, font: { family: 'Hind Siliguri', size: 12 }, padding: 8, maxTicksLimit: 6 } }
+    }
+  };
+}
+function killChart(id){ if (S.charts[id]) { S.charts[id].destroy(); delete S.charts[id]; } }
+
+function drawMonthly(){
+  killChart('monthly');
+  if (typeof Chart === 'undefined') return;
+  const rate = S.config.rate; const t = today();
+  const months = []; for (let i = 11; i >= 0; i--) months.push(addMonths(t, -i).slice(0, 7));
+  const agg = (rows) => { const m = {}; rows.forEach(r => { const k = r.date.slice(0, 7); m[k] = (m[k] || 0) + r.amount; }); return m; };
+  const qa = agg(S.qatar), bd = agg(S.bd);
+  const opts = chartBase();
+  opts.scales.y.ticks.callback = v => money(v, 'BDT', true);
+  opts.plugins.tooltip.callbacks = {
+    title: items => fmtMonth(months[items[0].dataIndex] + '-01'),
+    label: c => c.datasetIndex === 0
+      ? ` কাতারে খরচ: ${money(qa[months[c.dataIndex]] || 0, 'QAR')} (≈ ${money(c.raw, 'BDT')})`
+      : ` বাংলাদেশে পাঠানো: ${money(c.raw, 'BDT')}`
+  };
+  const surface = cssVar('--surface');
+  S.charts.monthly = new Chart($('#ch-monthly'), {
+    type: 'bar',
+    data: {
+      labels: months.map(m => MONTHS_S[+m.slice(5) - 1] + (m.slice(5) === '01' || m === months[0] ? ' ' + m.slice(2, 4) : '')),
+      datasets: [
+        { label: 'কাতারে খরচ', data: months.map(m => Math.round((qa[m] || 0) * rate)), backgroundColor: cssVar('--qa'), borderRadius: 4, borderSkipped: 'start', borderColor: surface, borderWidth: 0, categoryPercentage: .7, barPercentage: .9 },
+        { label: 'বাংলাদেশে পাঠানো', data: months.map(m => Math.round(bd[m] || 0)), backgroundColor: cssVar('--bd'), borderRadius: 4, borderSkipped: 'start', categoryPercentage: .7, barPercentage: .9 }
+      ]
+    },
+    options: opts
+  });
+}
+
+function drawTrend(R, rows){
+  killChart('trend');
+  if (typeof Chart === 'undefined') return;
+  const t = today();
+  const end = R.end > t ? t : R.end;
+  const span = diffDays(R.start, end) + 1;
+  const monthly = span > 62;
+  const keys = [];
+  if (monthly) { let m = monthStart(R.start); while (m <= end) { keys.push(m.slice(0, 7)); m = addMonths(m, 1); } }
+  else { for (let i = 0; i < span; i++) keys.push(addDays(R.start, i)); }
+  const m = {}; rows.forEach(r => { const k = monthly ? r.date.slice(0, 7) : r.date; m[k] = (m[k] || 0) + r.amount; });
+  const data = keys.map(k => Math.round((m[k] || 0) * 100) / 100);
+  $('#trend-hint').textContent = (monthly ? 'মাস অনুযায়ী মোট' : 'দিন অনুযায়ী মোট') + ' · ' + R.label;
+  const qa = cssVar('--qa');
+  const opts = chartBase();
+  opts.scales.y.ticks.callback = v => money(v, 'QAR', true);
+  opts.plugins.tooltip.callbacks = {
+    title: items => monthly ? fmtMonth(keys[items[0].dataIndex] + '-01') : fmtLong(keys[items[0].dataIndex]),
+    label: c => ` খরচ: ${money(c.raw, 'QAR')}`
+  };
+  const labels = keys.map(k => monthly ? MONTHS_S[+k.slice(5) - 1] + ' ' + k.slice(2, 4) : fmtShort(k));
+  const single = keys.length <= 1;
+  S.charts.trend = new Chart($('#ch-trend'), {
+    type: single ? 'bar' : 'line',
+    data: { labels, datasets: [{ data, borderColor: qa, backgroundColor: single ? qa : color(qa, .12), fill: !single, borderWidth: 2, tension: .3,
+      pointRadius: keys.length > 40 ? 0 : 3, pointHoverRadius: 5, pointBackgroundColor: qa, pointBorderColor: cssVar('--surface'), pointBorderWidth: 2, borderRadius: 4, maxBarThickness: 48 }] },
+    options: opts
+  });
+}
+function color(hex, a){ const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+
+/* ---------------------------- লেনদেনের পেজ ---------------------------- */
+function buildRecordsShell(kind){
+  const K = KINDS[kind];
+  $('#view-' + kind).innerHTML = `
+    <div class="page-head">
+      <div><h2>${K.title}</h2><p>${K.sub}</p></div>
+      <button class="btn ${K.cls}" data-add="${kind}">${icon('plus')}নতুন যোগ করুন</button>
+    </div>
+    <div class="card filters">
+      <div data-period-slot="${kind}"></div>
+      <div class="filter-row">
+        <label class="search">${icon('search')}<input type="search" placeholder="খুঁজুন — বিবরণ, নোট, পরিমাণ…" data-search="${kind}" aria-label="খুঁজুন"></label>
+        ${K.filters.map(([key]) => `<select class="select" data-filter="${kind}" data-key="${key}"></select>`).join('')}
+        <button class="btn" data-export="${kind}" title="ফিল্টার করা তালিকা CSV ফাইলে ডাউনলোড">${icon('download')}CSV</button>
+      </div>
+    </div>
+    <div class="summary" id="sum-${kind}"></div>
+    <div class="toolbar">
+      <div class="seg" data-modes="${kind}">
+        ${[['list','তালিকা'],['day','দৈনিক'],['week','সাপ্তাহিক'],['month','মাসিক']].map(([m, l]) => `<button data-mode="${m}">${l}</button>`).join('')}
+      </div>
+      <span class="range-label" id="rl-${kind}"></span>
+    </div>
+    <div id="list-${kind}"></div>`;
+}
+
+function filteredRows(kind, R){
+  const f = S.f[kind]; const q = f.q.trim().toLowerCase();
+  return S[kind].filter(r => inR(r, R)
+    && Object.entries(f.sel).every(([k, v]) => !v || (r[k] || '') === v)
+    && (!q || [r.description, r.notes, r.category, r.purpose, r.recipient, r.method, r.amount, r.qarSent].some(x => String(x == null ? '' : x).toLowerCase().includes(q))))
+    .sort((a, b) => (b.date + (b.createdAt || '')).localeCompare(a.date + (a.createdAt || '')));
+}
+
+function renderRecords(kind){
+  const K = KINDS[kind], f = S.f[kind], cur = K.cur;
+  const view = $('#view-' + kind);
+  $(`[data-period-slot="${kind}"]`, view).innerHTML = periodBar(kind);
+  K.filters.forEach(([key, list, all]) => {
+    const sel = $(`select[data-key="${key}"]`, view);
+    const opts = [...new Set(S.lists[list].concat(S[kind].map(r => r[key]).filter(Boolean)))];
+    sel.innerHTML = `<option value="">${all}</option>` + opts.map(o => `<option ${f.sel[key] === o ? 'selected' : ''}>${esc(o)}</option>`).join('');
+  });
+  $$(`[data-modes="${kind}"] button`).forEach(b => b.classList.toggle('active', b.dataset.mode === f.mode));
+  const R = getRange(f, [kind]);
+  const rows = filteredRows(kind, R);
+  const total = sum(rows);
+  $('#rl-' + kind).textContent = R.label;
+
+  const cards = [
+    [kind === 'qatar' ? 'মোট খরচ' : 'মোট পৌঁছেছে', money(total, cur)],
+    ['এন্ট্রি', rows.length + 'টি'],
+    [kind === 'qatar' ? 'দৈনিক গড়' : 'মাসিক গড়', kind === 'qatar' ? money(Math.round(total / R.days * 100) / 100, cur) : money(total / Math.max(1, R.days / 30.44), cur)]
+  ];
+  if (kind === 'qatar') cards.push(['টাকায় (আনুমানিক)', money(total * S.config.rate, 'BDT')]);
+  else {
+    const withQ = rows.filter(r => r.qarSent > 0);
+    const qs = withQ.reduce((a, r) => a + r.qarSent, 0), bs = sum(withQ);
+    cards.push(['গড় রেট (আপনার পাওয়া)', qs ? `১ QR = ${(bs / qs).toFixed(2)} ৳` : '—']);
+  }
+  $('#sum-' + kind).innerHTML = cards.map(([l, v]) => `<div class="card"><div class="lbl">${l}</div><div class="val num">${v}</div></div>`).join('');
+
+  const box = $('#list-' + kind);
+  if (!rows.length) {
+    const any = S[kind].length;
+    box.innerHTML = `<div class="card empty"><b>${any ? 'এই ফিল্টারে কোনো এন্ট্রি নেই' : 'এখনো কোনো এন্ট্রি নেই'}</b>${any ? 'সময়কাল বা ফিল্টার বদলে দেখুন' : `<div style="margin-top:12px"><button class="btn ${K.cls}" data-add="${kind}">${icon('plus')}প্রথম এন্ট্রি যোগ করুন</button></div>`}</div>`;
+    return;
+  }
+  box.innerHTML = f.mode === 'list' ? listHtml(kind, rows) : groupHtml(kind, rows, f.mode);
+}
+
+function listHtml(kind, rows){
+  const f = S.f[kind];
+  const shown = rows.slice(0, f.limit);
+  const groups = new Map();
+  shown.forEach(r => { if (!groups.has(r.date)) groups.set(r.date, []); groups.get(r.date).push(r); });
+  const dayTotal = {}; rows.forEach(r => { dayTotal[r.date] = (dayTotal[r.date] || 0) + r.amount; });
+  let html = [...groups.entries()].map(([d, rs]) => `
+    <div class="day-group">
+      <div class="day-head"><b>${fmtLong(d)}</b><span class="num">${money(dayTotal[d], KINDS[kind].cur)}</span></div>
+      <div class="tx-list">${rs.map(r => txHtml(kind, r, false)).join('')}</div>
+    </div>`).join('');
+  if (rows.length > shown.length) html += `<div class="more"><button class="btn" data-action="more" data-kind="${kind}">আরও দেখুন (${rows.length - shown.length}টি বাকি)</button></div>`;
+  return html;
+}
+
+function groupHtml(kind, rows, mode){
+  const K = KINDS[kind];
+  const keyOf = d => mode === 'day' ? d : mode === 'week' ? weekStartOf(d) : d.slice(0, 7);
+  const m = new Map();
+  rows.forEach(r => { const k = keyOf(r.date); const g = m.get(k) || { n: 0, t: 0 }; g.n++; g.t += r.amount; m.set(k, g); });
+  const keys = [...m.keys()].sort().reverse();
+  const max = Math.max(...keys.map(k => m.get(k).t));
+  const label = k => mode === 'day' ? fmtLong(k) : mode === 'week' ? `${fmtShort(k)} – ${fmtShort(addDays(k, 6))} ${addDays(k, 6).slice(0, 4)}` : fmtMonth(k + '-01');
+  const head = { day: 'দিন', week: 'সপ্তাহ', month: 'মাস' }[mode];
+  return `<table class="sum-table">
+    <thead><tr><th>${head}</th><th class="r">এন্ট্রি</th><th class="r">মোট</th><th class="bar-cell"></th><th class="r">আগেরটির তুলনায়</th></tr></thead>
+    <tbody>${keys.map((k, i) => {
+      const g = m.get(k); const prev = keys[i + 1] ? m.get(keys[i + 1]).t : null;
+      let chg = '<span class="chg neu">—</span>';
+      if (prev) {
+        const p = Math.round((g.t - prev) / prev * 100);
+        const cls = p === 0 ? 'neu' : kind === 'qatar' ? (p > 0 ? 'bad' : 'good') : 'neu';
+        chg = `<span class="chg ${cls}">${p > 0 ? '▲' : p < 0 ? '▼' : ''} ${Math.abs(p)}%</span>`;
+      }
+      return `<tr><td>${label(k)}</td><td class="r num">${g.n}</td><td class="r num"><b>${money(g.t, K.cur)}</b></td>
+        <td class="bar-cell"><div class="mini-bar" style="--c:var(--${K.cls})"><span style="width:${Math.max(2, g.t / max * 100)}%"></span></div></td><td class="r">${chg}</td></tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+/* ---------------------------- CSV এক্সপোর্ট ---------------------------- */
+const CSV_COLS = {
+  qatar: [['date','তারিখ'],['category','ক্যাটাগরি'],['description','বিবরণ'],['amount','পরিমাণ (QAR)'],['method','পেমেন্ট মাধ্যম'],['notes','নোট']],
+  bd: [['date','তারিখ'],['recipient','প্রাপক'],['purpose','কারণ'],['description','বিবরণ'],['amount','পৌঁছেছে (BDT)'],['qarSent','পাঠানো (QAR)'],['rate','রেট'],['method','মাধ্যম'],['notes','নোট']]
+};
+function exportCSV(kind){
+  const rows = filteredRows(kind, getRange(S.f[kind], [kind]));
+  if (!rows.length) return toast('ডাউনলোড করার মতো কোনো এন্ট্রি নেই', true);
+  const q = v => { const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const csv = '﻿' + [CSV_COLS[kind].map(c => q(c[1])).join(',')].concat(rows.map(r => CSV_COLS[kind].map(c => q(r[c[0]])).join(','))).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = (kind === 'qatar' ? 'qatar-expenses-' : 'bd-remittance-') + today() + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast(`${rows.length}টি এন্ট্রি ডাউনলোড হয়েছে`);
+}
+
+/* ---------------------------- এন্ট্রি ফর্ম ---------------------------- */
+let formCtx = null;
+function lastUsed(kind, key){ const r = [...S[kind]].sort((a, b) => (b.date + (b.createdAt || '')).localeCompare(a.date + (a.createdAt || '')))[0]; return r ? r[key] : ''; }
+
+function openForm(kind, id){
+  closeModal('#chooser');
+  const K = KINDS[kind];
+  const rec = id ? S[kind].find(r => r.id === id) : null;
+  if (id && !rec) return toast('এন্ট্রিটি পাওয়া যায়নি', true);
+  const v = rec ? clone(rec) : { date: today() };
+  if (!rec) FORMS[kind].forEach(fd => { if (fd.type === 'pick' && fd.k !== 'recipient') v[fd.k] = lastUsed(kind, fd.k) || ''; });
+  formCtx = { kind, id: rec ? rec.id : '' };
+  const panel = $('#modal .modal-panel');
+  panel.style.setProperty('--c', `var(--${K.cls})`); panel.style.setProperty('--soft', `var(--${K.cls}-soft)`);
+  $('#modal-title').textContent = rec ? `${K.title} — এডিট` : (kind === 'qatar' ? 'নতুন কাতার খরচ' : 'বাংলাদেশে টাকা পাঠানো');
+  const suggestions = [...new Set(S[kind].slice(-300).map(r => r.description).filter(Boolean))].slice(-60);
+
+  $('#form-body').innerHTML = FORMS[kind].map(fd => fieldHtml(fd, v)).join('') +
+    `<datalist id="dl-desc">${suggestions.map(s => `<option value="${esc(s)}">`).join('')}</datalist><div class="err" id="form-err" hidden></div>`;
+  $('#form-foot').innerHTML = (rec ? `<button type="button" class="btn danger" data-action="delete">${icon('trash')}ডিলিট</button>` : '') +
+    `<span class="grow"></span>` +
+    (rec ? '' : `<button type="button" class="btn" data-action="save-another">সেভ করে আরেকটি</button>`) +
+    `<button type="submit" class="btn ${K.cls}" id="save-btn">${icon('check')}${rec ? 'আপডেট করুন' : 'সেভ করুন'}</button>`;
+  updateRateHint();
+  openModal('#modal');
+  setTimeout(() => { const a = $('#f-amount'); if (a && window.matchMedia('(min-width: 960px)').matches) a.focus(); }, 60);
+}
+
+function fieldHtml(fd, v){
+  const opt = fd.opt ? ' <span class="opt">(ঐচ্ছিক)</span>' : '';
+  const val = v[fd.k] == null ? '' : v[fd.k];
+  switch (fd.type) {
+    case 'amount':
+      return `<div class="field"><label for="f-${fd.k}">${fd.label}${opt}</label>
+        <div class="amount-wrap ${fd.small ? 'small' : ''}"><span class="cur">${fd.cur}</span><input id="f-${fd.k}" name="${fd.k}" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(val)}" ${fd.req ? 'required' : ''}></div>
+        ${fd.k === 'qarSent' ? '<div class="help" id="rate-hint">দিলে আপনার পাওয়া রেট হিসাব হবে</div>' : ''}</div>`;
+    case 'date':
+      return `<div class="field"><label for="f-${fd.k}">${fd.label}</label><input class="input" type="date" id="f-${fd.k}" name="${fd.k}" value="${esc(val)}" max="${addDays(today(), 366)}" required></div>`;
+    case 'text':
+      return `<div class="field"><label for="f-${fd.k}">${fd.label}${opt}</label><input class="input" id="f-${fd.k}" name="${fd.k}" list="dl-desc" placeholder="${esc(fd.ph || '')}" value="${esc(val)}" maxlength="300" autocomplete="off"></div>`;
+    case 'textarea':
+      return `<div class="field"><label for="f-${fd.k}">${fd.label}${opt}</label><textarea class="textarea" id="f-${fd.k}" name="${fd.k}" placeholder="${esc(fd.ph || '')}" maxlength="500">${esc(val)}</textarea></div>`;
+    case 'pick': {
+      const items = [...new Set(S.lists[fd.list].concat(val ? [val] : []))];
+      return `<div class="field" data-pick="${fd.k}" data-list="${fd.list}"><span class="lbl">${fd.label}${opt}</span>
+        <div class="pick" role="radiogroup" aria-label="${esc(fd.label)}">${items.map((o, i) => pickItem(fd.k, o, o === val, i)).join('')}
+          <button type="button" class="chip add-chip" data-action="add-pick">+ নতুন</button></div>
+        <div class="add-inline" hidden><input class="input" placeholder="নতুন নাম লিখুন" maxlength="60"><button type="button" class="btn" data-action="add-pick-save">যোগ</button></div></div>`;
+    }
+  }
+}
+function pickItem(k, o, checked, i){
+  const id = `p-${k}-${i}-${Math.random().toString(36).slice(2, 6)}`;
+  return `<input type="radio" name="${k}" id="${id}" value="${esc(o)}" ${checked ? 'checked' : ''}><label for="${id}">${esc(o)}</label>`;
+}
+function updateRateHint(){
+  const h = $('#rate-hint'); if (!h) return;
+  const a = toNum($('#f-amount').value), q = toNum($('#f-qarSent').value);
+  h.textContent = a > 0 && q > 0 ? `আপনার রেট: ১ QR = ${(a / q).toFixed(2)} ৳` : 'দিলে আপনার পাওয়া রেট হিসাব হবে';
+}
+
+function readForm(){
+  const fm = $('#form'); const o = { id: formCtx.id };
+  FORMS[formCtx.kind].forEach(fd => {
+    if (fd.type === 'pick') { const c = fm.querySelector(`input[name="${fd.k}"]:checked`); o[fd.k] = c ? c.value : ''; }
+    else o[fd.k] = (fm.elements[fd.k].value || '').trim();
+  });
+  return o;
+}
+
+function submitForm(another){
+  const err = $('#form-err');
+  const rec = readForm();
+  const amt = toNum(rec.amount);
+  err.hidden = true;
+  if (!(amt > 0)) { err.textContent = 'সঠিক পরিমাণ লিখুন'; err.hidden = false; $('#f-amount').focus(); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.date)) { err.textContent = 'তারিখ বেছে নিন'; err.hidden = false; return; }
+  rec.amount = amt;
+  if (rec.qarSent !== undefined) rec.qarSent = toNum(rec.qarSent) > 0 ? toNum(rec.qarSent) : '';
+  const isNew = !rec.id;
+  if (isNew) rec.id = newId(formCtx.kind);
+  commit({ type: 'save', kind: formCtx.kind, rec });
+  toast(!isNew ? 'আপডেট হয়েছে ✔'
+    : isDemo() ? 'সেভ হয়েছে ✔ (ডেমো)'
+    : navigator.onLine ? 'সেভ হয়েছে ✔ Google Sheet-এ যাচ্ছে…' : 'সেভ হয়েছে ✔ নেট এলে Google Sheet-এ যাবে');
+  if (another) {
+    const keepDate = rec.date;
+    openForm(formCtx.kind);
+    $('#f-date').value = keepDate;
+    $('#f-amount').focus();
+  } else closeModal('#modal');
+  render();
+}
+
+function deleteCurrent(btn){
+  if (!btn.classList.contains('armed')) { btn.classList.add('armed'); btn.innerHTML = icon('trash') + 'নিশ্চিত? আবার চাপুন'; setTimeout(() => { if (btn.isConnected) { btn.classList.remove('armed'); btn.innerHTML = icon('trash') + 'ডিলিট'; } }, 4000); return; }
+  commit({ type: 'delete', kind: formCtx.kind, id: formCtx.id });
+  closeModal('#modal'); toast('ডিলিট হয়েছে'); render();
+}
+
+function addPick(field){
+  const wrap = field.querySelector('.add-inline'); const input = wrap.querySelector('input');
+  const name = input.value.trim(); if (!name) return input.focus();
+  const list = field.dataset.list; const k = field.dataset.pick;
+  if (!S.lists[list].includes(name)) {
+    const lists = clone(S.lists); lists[list].push(name);
+    commit({ type: 'settings', payload: { lists, config: clone(S.config) } });
+  }
+  const pick = field.querySelector('.pick');
+  const existing = [...pick.querySelectorAll('input')].find(i => i.value === name);
+  if (existing) existing.checked = true;
+  else { pick.querySelector('.add-chip').insertAdjacentHTML('beforebegin', pickItem(k, name, true, 999)); }
+  input.value = ''; wrap.hidden = true;
+}
+
+/* ---------------------------- সেটিংস ---------------------------- */
+function renderSettings(){
+  if (!S.draft) S.draft = { lists: clone(S.lists), config: clone(S.config) };
+  const D = S.draft;
+  const th = getTheme();
+  $('#view-settings').innerHTML = `
+    <div class="page-head"><div><h2>সেটিংস</h2><p>ক্যাটাগরি, প্রাপক, মাধ্যম ও রেট নিজের মতো সাজান — সব Google Sheet-এ সেভ থাকবে</p></div></div>
+    <div class="grid two">
+      <div class="card stack">
+        <h3>সাধারণ</h3>
+        <div class="field"><label for="s-name">আপনার নাম <span class="opt">(ঐচ্ছিক)</span></label><input class="input" id="s-name" data-cfg="userName" value="${esc(D.config.userName)}" maxlength="60" placeholder="যেমন: রহিম"></div>
+        <div class="field"><label for="s-rate">রিয়াল থেকে টাকার রেট</label>
+          <div class="amount-wrap small"><span class="cur">১ QR =</span><input id="s-rate" data-cfg="rate" inputmode="decimal" value="${esc(D.config.rate)}"><span class="cur" style="border-right:0;border-left:1px solid var(--border)">৳</span></div>
+          <div class="help">কাতারের খরচকে টাকায় তুলনা করতে এই রেট ব্যবহার হয়। মাঝে মাঝে আপডেট করুন।</div></div>
+        <div class="field"><label for="s-week">সপ্তাহ শুরু হয়</label>
+          <select class="select" id="s-week" data-cfg="weekStart">${[[6,'শনিবার'],[0,'রবিবার'],[1,'সোমবার']].map(([v, l]) => `<option value="${v}" ${+D.config.weekStart === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><span class="lbl">থিম</span>
+          <div class="seg" data-theme-seg>${[['auto','অটো'],['light','লাইট'],['dark','ডার্ক']].map(([v, l]) => `<button type="button" data-theme-set="${v}" class="${th === v ? 'active' : ''}">${l}</button>`).join('')}</div></div>
+      </div>
+      <div class="card stack" id="conn-card"></div>
+    </div>
+    <h3 style="margin:22px 0 12px">তালিকা সাজান</h3>
+    <div class="set-grid">${Object.keys(DEFAULT_LISTS).map(k => `
+      <div class="card list-editor" data-list-ed="${k}">
+        <h3>${LIST_LABELS[k]}</h3>
+        <div class="tags">${D.lists[k].map((v, i) => `<span class="tag-item">${esc(v)}<button type="button" data-action="rm-item" data-i="${i}" aria-label="${esc(v)} মুছুন">${icon('x')}</button></span>`).join('') || '<span class="muted">খালি</span>'}</div>
+        <div class="add-inline"><input class="input" placeholder="নতুন যোগ করুন" maxlength="60"><button type="button" class="btn" data-action="add-item">যোগ</button></div>
+      </div>`).join('')}</div>
+    <div class="save-bar"><button class="btn" data-action="reset-settings">বাতিল</button><button class="btn primary" data-action="save-settings">${icon('check')}সেটিংস সেভ করুন</button></div>`;
+  renderConnCard();
+}
+
+function renderConnCard(){
+  const el = $('#conn-card'); if (!el) return;
+  const n = OUTBOX.length;
+  const d = SYNC.at ? new Date(SYNC.at) : null;
+  const when = d ? `${d.getDate()} ${MONTHS_S[d.getMonth()]}, ${pad(d.getHours())}:${pad(d.getMinutes())}` : '—';
+  const stateText = { ok: '✅ Google Sheet-এর সাথে মিলে আছে', syncing: '🔄 সিংক হচ্ছে…', pending: '⏳ কিছু পরিবর্তন পাঠানো বাকি', offline: '📴 অফলাইন — নেট এলে অটো সিংক হবে', error: '⚠️ সিংক হয়নি: ' + SYNC.error, auth: '🔒 ' + SYNC.error }[SYNC.state] || '';
+  const install = isStandalone()
+    ? '<div class="help">✅ অ্যাপ হিসেবে চলছে</div>'
+    : installEvt
+      ? `<button class="btn primary" data-action="install">📲 ফোনে অ্যাপ ইনস্টল করুন</button>`
+      : '<div class="help">📲 ইনস্টল করতে Chrome-এর ⋮ মেনু থেকে "অ্যাপ ইনস্টল করুন" বা "Add to Home screen" চাপুন।</div>';
+  el.innerHTML = isDemo() ? `
+    <h3>সংযোগ ও ডেটা</h3>
+    <p class="muted" style="margin:0">ডেমো মোডে চলছে — নমুনা ডেটা, শুধু এই ডিভাইসে থাকে, Google Sheet-এ যায় না।</p>
+    <button class="btn primary" data-action="go-connect">আসল Google Sheet-এ কানেক্ট করুন</button>
+    ${install}` : `
+    <h3>সংযোগ ও ডেটা</h3>
+    <div class="kv"><span>অবস্থা</span><span>${esc(stateText)}</span><span>শেষ সিংক</span><span>${when}</span><span>অপেক্ষায়</span><span>${n}টি পরিবর্তন</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" data-action="sync">${icon('refresh')}এখনই সিংক</button>
+      ${S.sheetUrl ? `<a class="btn" href="${esc(S.sheetUrl)}" target="_blank" rel="noopener">${icon('external')}Google Sheet খুলুন</a>` : ''}
+    </div>
+    <button class="btn" data-action="show-qr">অন্য ফোনে কানেক্ট করুন (QR কোড)</button>
+    ${install}
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-export-all="qatar">${icon('download')}কাতার খরচ CSV</button><button class="btn" data-export-all="bd">${icon('download')}দেশে পাঠানো CSV</button></div>
+    <div class="help">মোট এন্ট্রি: কাতার ${S.qatar.length}টি · বাংলাদেশ ${S.bd.length}টি</div>
+    ${n ? `<div class="warn">${n}টি পরিবর্তন এখনো Google Sheet-এ যায়নি। সংযোগ বিচ্ছিন্ন করলে এগুলো হারিয়ে যাবে।</div>` : ''}
+    <button class="btn danger" data-action="disconnect">সংযোগ বিচ্ছিন্ন করুন</button>`;
+}
+
+function saveSettingsNow(){
+  const D = S.draft; const rate = toNum(D.config.rate);
+  if (!(rate > 0)) return toast('সঠিক রেট লিখুন', true);
+  D.config.rate = rate; D.config.weekStart = Number(D.config.weekStart);
+  commit({ type: 'settings', payload: { lists: clone(D.lists), config: clone(D.config) } });
+  S.draft = null; toast('সেটিংস সেভ হয়েছে ✔'); render();
+}
+
+/* ---------------------------- থিম ---------------------------- */
+function getTheme(){ try { return localStorage.getItem('ph-theme') || 'auto'; } catch (e) { return 'auto'; } }
+function applyTheme(t){
+  if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('ph-theme', t); } catch (e) {}
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (S.view === 'dashboard') renderDashboard(); });
+
+/* ---------------------------- মডাল ও টোস্ট ---------------------------- */
+function openModal(sel){ $(sel).hidden = false; document.body.style.overflow = 'hidden'; }
+function closeModal(sel){ const m = $(sel); if (!m || m.hidden) return; m.hidden = true; if ($$('.modal').every(x => x.hidden)) document.body.style.overflow = ''; }
+let toastTimer;
+function toast(msg, error){
+  clearTimeout(toastTimer);
+  $('#toast-root').innerHTML = `<div class="toast ${error ? 'error' : ''}" role="status">${esc(msg)}</div>`;
+  toastTimer = setTimeout(() => { $('#toast-root').innerHTML = ''; }, error ? 5000 : 2600);
+}
+
+/* ---------------------------- ইভেন্ট ---------------------------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button, [data-close], a');
+  if (!t) return;
+  if (t.hasAttribute('data-close')) { closeModal('#' + t.closest('.modal').id); return; }
+  if (t.dataset.nav) { if (t.dataset.nav !== 'settings') S.draft = null; go(t.dataset.nav); return; }
+  if (t.dataset.add) { openForm(t.dataset.add); return; }
+  if (t.dataset.edit) { openForm(t.dataset.edit, t.dataset.id); return; }
+  if (t.dataset.period) {
+    const scope = t.closest('[data-scope]').dataset.scope; const f = S.f[scope];
+    f.period = t.dataset.period;
+    if (f.period === 'custom' && !f.from) { f.from = monthStart(today()); f.to = today(); }
+    f.limit = 150; render(); return;
+  }
+  if (t.dataset.mode) { const k = t.closest('[data-modes]').dataset.modes; S.f[k].mode = t.dataset.mode; render(); return; }
+  if (t.dataset.export) { exportCSV(t.dataset.export); return; }
+  if (t.dataset.exportAll) {
+    const k = t.dataset.exportAll; const saved = clone(S.f[k]);
+    Object.assign(S.f[k], { period: 'all', sel: {}, q: '' }); exportCSV(k); S.f[k] = saved; return;
+  }
+  if (t.dataset.themeSet) { applyTheme(t.dataset.themeSet); renderSettings(); return; }
+  switch (t.dataset.action) {
+    case 'choose': openModal('#chooser'); break;
+    case 'refresh': refresh(t); break;
+    case 'sync': sync(true); break;
+    case 'demo': startDemo(); break;
+    case 'go-connect': disconnect(); break;
+    case 'install': installApp(); break;
+    case 'hide-install': store.set('hideInstall', true); render(); break;
+    case 'show-qr': showQR(); break;
+    case 'copy-link': copyLink(); break;
+    case 'disconnect':
+      if (!t.classList.contains('armed')) { t.classList.add('armed'); t.textContent = 'নিশ্চিত? আবার চাপুন'; setTimeout(() => { if (t.isConnected) { t.classList.remove('armed'); t.textContent = 'সংযোগ বিচ্ছিন্ন করুন'; } }, 4000); }
+      else disconnect();
+      break;
+    case 'more': S.f[t.dataset.kind].limit += 150; render(); break;
+    case 'save-another': submitForm(true); break;
+    case 'delete': deleteCurrent(t); break;
+    case 'add-pick': { const w = t.closest('.field').querySelector('.add-inline'); w.hidden = false; w.querySelector('input').focus(); break; }
+    case 'add-pick-save': addPick(t.closest('.field')); break;
+    case 'rm-item': { const k = t.closest('[data-list-ed]').dataset.listEd; S.draft.lists[k].splice(+t.dataset.i, 1); renderSettings(); break; }
+    case 'add-item': addListItem(t.closest('[data-list-ed]')); break;
+    case 'save-settings': saveSettingsNow(t); break;
+    case 'reset-settings': S.draft = null; renderSettings(); toast('পরিবর্তন বাতিল করা হয়েছে'); break;
+  }
+});
+function addListItem(ed){
+  const input = ed.querySelector('input'); const v = input.value.trim(); if (!v) return input.focus();
+  const k = ed.dataset.listEd;
+  if (!S.draft.lists[k].includes(v)) S.draft.lists[k].push(v);
+  renderSettings();
+  const again = $(`[data-list-ed="${k}"] input`); if (again) again.focus();
+}
+async function refresh(btn){
+  const svg = btn.querySelector('svg');
+  svg.style.animation = 'spin .8s linear infinite';
+  await sync(true);
+  svg.style.animation = '';
+}
+
+let searchTimer;
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.search) { clearTimeout(searchTimer); searchTimer = setTimeout(() => { S.f[t.dataset.search].q = t.value; S.f[t.dataset.search].limit = 150; render(); }, 200); }
+  if (t.dataset.cfg && S.draft) S.draft.config[t.dataset.cfg] = t.value;
+  if (t.id === 'f-amount' || t.id === 'f-qarSent') updateRateHint();
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.filter) { S.f[t.dataset.filter].sel[t.dataset.key] = t.value; render(); }
+  if (t.dataset.range) { const scope = t.closest('[data-scope]').dataset.scope; S.f[scope][t.dataset.range] = t.value; render(); }
+  if (t.dataset.cfg && S.draft) S.draft.config[t.dataset.cfg] = t.value;
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal('#modal'); closeModal('#chooser'); closeModal('#info'); }
+  if (e.key === 'Enter' && e.target.closest('.add-inline')) {
+    e.preventDefault();
+    const ed = e.target.closest('[data-list-ed]');
+    if (ed) addListItem(ed); else addPick(e.target.closest('.field'));
+  }
+});
+$('#form').addEventListener('submit', e => { e.preventDefault(); submitForm(false); });
+$('#connect-form').addEventListener('submit', e => { e.preventDefault(); connectNow(); });
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-paste]'); if (!t) return;
+  navigator.clipboard.readText()
+    .then(v => { $('#' + t.dataset.paste).value = v.trim(); })
+    .catch(() => toast('এখানে পেস্ট করা যায়নি — ঘরে চেপে ধরে Paste করুন', true));
+});
+
+// ইন্টারনেট ফিরে এলে, অ্যাপে ফিরে এলে, আর প্রতি ৫ মিনিটে অটো সিংক
+window.addEventListener('online', () => sync(false));
+window.addEventListener('offline', () => { if (CONN && !isDemo()) setSync('offline'); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && CONN && !isDemo() && Date.now() - Date.parse(SYNC.at || 0) > 60000) sync(false);
+});
+setInterval(() => { if (!document.hidden && CONN && !isDemo()) sync(false); }, 5 * 60 * 1000);
+
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+boot();
+</script>
+</body>
+</html>
